@@ -29,6 +29,7 @@ export default function App() {
   const [gridError, setGridError] = useState(false);
   const [selected, setSelected] = useState(null);
   const searchRef = useRef(null);
+  const sentinelRef = useRef(null);
 
   // Load the master index (name + id of every Pokémon) once.
   useEffect(() => {
@@ -75,6 +76,22 @@ export default function App() {
   }, [index, selectedType, typeMembers, showFavorites, favorites, query]);
 
   const slice = useMemo(() => (visible ? visible.slice(0, page * PAGE_SIZE) : []), [visible, page]);
+
+  // Load the next page automatically once the sentinel scrolls into view.
+  const hasMore = visible !== null && slice.length < visible.length;
+  useEffect(() => {
+    if (!hasMore) return;
+    const target = sentinelRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setPage((p) => p + 1);
+      },
+      { rootMargin: '600px' }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   // Fetch full details for every Pokémon in the current slice that we
   // haven't loaded yet. Failures leave skeletons and raise the banner.
@@ -216,10 +233,11 @@ export default function App() {
                 )
               )}
             </div>
-            {slice.length < visible.length && (
-              <button className="neu-btn load-more" onClick={() => setPage((p) => p + 1)}>
-                Load More
-              </button>
+            {hasMore && (
+              <div ref={sentinelRef} className="load-more-sentinel" role="status">
+                <Pokeball size={28} spinning />
+                <span>Loading more…</span>
+              </div>
             )}
           </>
         )}

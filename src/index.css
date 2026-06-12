@@ -586,12 +586,16 @@ button:disabled {
 
 /* ---------- load more / empty / footer ---------- */
 
-.load-more {
-  display: block;
-  margin: 38px auto 0;
-  padding: 15px 44px;
+.load-more-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 38px;
+  padding: 15px 0;
   font-size: 15px;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--text-soft);
 }
 
 .empty {
