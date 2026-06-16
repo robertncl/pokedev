@@ -1,27 +1,24 @@
+import { Chip, Group } from '@mantine/core';
 import { formatName, TYPE_COLORS, TYPES } from '../constants.js';
 
 export default function TypeFilter({ selected, onSelect }) {
   return (
-    <nav className="type-filter" aria-label="Filter by type">
-      <button
-        className={`neu-btn chip ${selected === '' ? 'is-active' : ''}`}
-        onClick={() => onSelect('')}
-        aria-pressed={selected === ''}
-      >
+    <Group justify="center" gap="xs" mb="xl">
+      <Chip checked={selected === ''} onClick={() => onSelect('')} variant="light" radius="xl" color="pokeRed">
         All
-      </button>
+      </Chip>
       {TYPES.map((type) => (
-        <button
+        <Chip
           key={type}
-          className={`neu-btn chip ${selected === type ? 'is-active' : ''}`}
-          style={{ '--type-color': TYPE_COLORS[type] }}
+          checked={selected === type}
           onClick={() => onSelect(type)}
-          aria-pressed={selected === type}
+          variant="light"
+          radius="xl"
+          color={TYPE_COLORS[type]}
         >
-          <span className="chip-dot" aria-hidden="true" />
           {formatName(type)}
-        </button>
+        </Chip>
       ))}
-    </nav>
+    </Group>
   );
 }

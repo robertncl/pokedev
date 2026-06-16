@@ -1,17 +1,52 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Card,
+  Grid,
+  Group,
+  Modal,
+  ScrollArea,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core';
+import { IconHeart, IconHeartFilled, IconSparkles, IconX } from '@tabler/icons-react';
 import { fetchEvolutionChain, fetchSpecies } from '../api.js';
 import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS } from '../constants.js';
 import EvolutionChain from './EvolutionChain.jsx';
 import StatBar from './StatBar.jsx';
 import TypeBadge from './TypeBadge.jsx';
-import { CloseIcon, HeartIcon, SparklesIcon } from './Icons.jsx';
+
+function SectionTitle({ children }) {
+  return (
+    <Text tt="uppercase" fw={800} c="dimmed" size="sm" mb="sm" style={{ letterSpacing: '0.12em' }}>
+      {children}
+    </Text>
+  );
+}
+
+function Fact({ label, value }) {
+  return (
+    <Card withBorder radius="md" padding="sm" ta="center">
+      <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
+        {label}
+      </Text>
+      <Text fw={800} fz="lg">
+        {value}
+      </Text>
+    </Card>
+  );
+}
 
 export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onClose, onNavigate }) {
   const [species, setSpecies] = useState(null);
   // chain: undefined = loading, null = unavailable, object = loaded
   const [chain, setChain] = useState(undefined);
   const [shiny, setShiny] = useState(false);
-  const closeRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,31 +73,12 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
     };
   }, [pokemon]);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [onClose]);
-
   const art = shiny
     ? pokemon.sprites?.other?.['official-artwork']?.front_shiny || shinyArtworkUrl(pokemon.id)
     : pokemon.sprites?.other?.['official-artwork']?.front_default || artworkUrl(pokemon.id);
 
   const flavor = species
-    ? ([...species.flavor_text_entries].reverse().find((f) => f.language.name === 'en')
-        ?.flavor_text || ''
-      )
+    ? ([...species.flavor_text_entries].reverse().find((f) => f.language.name === 'en')?.flavor_text || '')
         .replace(/\s+/g, ' ')
         .trim()
     : '';
@@ -70,90 +86,120 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
   const total = pokemon.stats.reduce((sum, s) => sum + s.base_stat, 0);
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <Modal
+      opened
+      onClose={onClose}
+      size="xl"
+      radius="lg"
+      centered
+      padding="lg"
+      withCloseButton={false}
+      overlayProps={{ backgroundOpacity: 0.55, blur: 4 }}
+      scrollAreaComponent={ScrollArea.Autosize}
+      aria-label={`${formatName(pokemon.name)} details`}
     >
-      <div className="modal neu" role="dialog" aria-modal="true" aria-label={`${formatName(pokemon.name)} details`}>
-        <header className="modal-head">
-          <span className="modal-id">{padId(pokemon.id)}</span>
-          <h2>{formatName(pokemon.name)}</h2>
-          {genus && <span className="genus">{genus}</span>}
-          <div className="modal-actions">
-            <button
-              className={`neu-btn icon-btn ${shiny ? 'is-active shiny-on' : ''}`}
-              onClick={() => setShiny((s) => !s)}
-              aria-pressed={shiny}
-              title={shiny ? 'Show regular artwork' : 'Show shiny artwork'}
-            >
-              <SparklesIcon />
-            </button>
-            <button
-              className={`neu-btn icon-btn ${isFavorite ? 'is-active heart-on' : ''}`}
+      <Stack gap="lg">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Group gap="xs" align="baseline" wrap="wrap" style={{ rowGap: 4 }}>
+            <Text size="sm" fw={800} c="dimmed">
+              {padId(pokemon.id)}
+            </Text>
+            <Title order={2} fz={{ base: 24, sm: 30 }}>
+              {formatName(pokemon.name)}
+            </Title>
+            {genus && (
+              <Text c="dimmed" fw={600}>
+                {genus}
+              </Text>
+            )}
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <Tooltip label={shiny ? 'Show regular artwork' : 'Show shiny artwork'} withArrow>
+              <ActionIcon
+                variant={shiny ? 'filled' : 'default'}
+                color="yellow"
+                size="lg"
+                radius="xl"
+                onClick={() => setShiny((s) => !s)}
+                aria-pressed={shiny}
+                aria-label="Toggle shiny artwork"
+              >
+                <IconSparkles size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <ActionIcon
+              variant={isFavorite ? 'filled' : 'default'}
+              color="pokeRed"
+              size="lg"
+              radius="xl"
               onClick={() => onToggleFavorite(pokemon.id)}
               aria-pressed={isFavorite}
-              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <HeartIcon filled={isFavorite} />
-            </button>
-            <button ref={closeRef} className="neu-btn icon-btn" onClick={onClose} aria-label="Close details">
-              <CloseIcon />
-            </button>
-          </div>
-        </header>
+              {isFavorite ? <IconHeartFilled size={18} /> : <IconHeart size={18} />}
+            </ActionIcon>
+            <ActionIcon variant="default" size="lg" radius="xl" onClick={onClose} aria-label="Close details">
+              <IconX size={18} />
+            </ActionIcon>
+          </Group>
+        </Group>
 
-        <div className="modal-body">
-          <section className="modal-left">
-            <div className="hero-dish neu-inset">
-              <img
-                key={art}
-                src={art}
-                alt={formatName(pokemon.name)}
-                onError={() => {
-                  if (shiny) setShiny(false);
-                }}
-              />
-            </div>
-            <div className="badge-row">
-              {pokemon.types.map((t) => (
-                <TypeBadge key={t.type.name} type={t.type.name} />
-              ))}
-            </div>
-            <p className="flavor">
-              {species ? flavor || 'No Pokédex entry available.' : 'Loading Pokédex entry…'}
-            </p>
-          </section>
+        <Grid gutter="xl" align="flex-start">
+          <Grid.Col span={{ base: 12, sm: 5 }}>
+            <Stack align="center" gap="md">
+              <div className="artCircle" style={{ width: 260, maxWidth: '72vw', aspectRatio: 1 }}>
+                <img
+                  key={art}
+                  className="spriteImg"
+                  src={art}
+                  alt={formatName(pokemon.name)}
+                  onError={() => {
+                    if (shiny) setShiny(false);
+                  }}
+                />
+              </div>
+              <Group justify="center" gap={6}>
+                {pokemon.types.map((t) => (
+                  <TypeBadge key={t.type.name} type={t.type.name} size="md" />
+                ))}
+              </Group>
+              <Text c="dimmed" ta="center" size="sm" lh={1.6} maw={340}>
+                {species ? flavor || 'No Pokédex entry available.' : 'Loading Pokédex entry…'}
+              </Text>
+            </Stack>
+          </Grid.Col>
 
-          <section className="modal-right">
-            <div className="fact-grid">
-              <div className="fact">
-                <span className="fact-label">Height</span>
-                <span className="fact-value">{(pokemon.height / 10).toFixed(1)} m</span>
-              </div>
-              <div className="fact">
-                <span className="fact-label">Weight</span>
-                <span className="fact-value">{(pokemon.weight / 10).toFixed(1)} kg</span>
-              </div>
-              <div className="fact">
-                <span className="fact-label">Base XP</span>
-                <span className="fact-value">{pokemon.base_experience ?? '—'}</span>
-              </div>
-            </div>
+          <Grid.Col span={{ base: 12, sm: 7 }}>
+            <SimpleGrid cols={3} spacing="sm" mb="lg">
+              <Fact label="Height" value={`${(pokemon.height / 10).toFixed(1)} m`} />
+              <Fact label="Weight" value={`${(pokemon.weight / 10).toFixed(1)} kg`} />
+              <Fact label="Base XP" value={pokemon.base_experience ?? '—'} />
+            </SimpleGrid>
 
-            <h3 className="section-title">Abilities</h3>
-            <div className="ability-row">
+            <SectionTitle>Abilities</SectionTitle>
+            <Group gap="xs" mb="lg">
               {pokemon.abilities.map((a) => (
-                <span key={`${a.ability.name}-${a.slot}`} className="ability-chip">
+                <Badge
+                  key={`${a.ability.name}-${a.slot}`}
+                  variant="default"
+                  size="lg"
+                  radius="sm"
+                  fw={700}
+                  style={{ textTransform: 'none' }}
+                >
                   {formatName(a.ability.name)}
-                  {a.is_hidden && <em> · hidden</em>}
-                </span>
+                  {a.is_hidden && (
+                    <Text span c="dimmed" fz="xs">
+                      {' '}
+                      · hidden
+                    </Text>
+                  )}
+                </Badge>
               ))}
-            </div>
+            </Group>
 
-            <h3 className="section-title">Base Stats</h3>
-            <div className="stats">
+            <SectionTitle>Base Stats</SectionTitle>
+            <Stack gap="sm">
               {pokemon.stats.map((s) => (
                 <StatBar
                   key={s.stat.name}
@@ -161,22 +207,34 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
                   value={s.base_stat}
                 />
               ))}
-              <div className="stat stat-total">
-                <span className="stat-label">Total</span>
-                <span className="stat-value">{total}</span>
-                <span />
-              </div>
-            </div>
-          </section>
-        </div>
+              <Group gap="sm" wrap="nowrap" mt={4}>
+                <Text w={64} size="sm" fw={800}>
+                  Total
+                </Text>
+                <Text w={32} ta="right" size="sm" fw={800} c="pokeRed" ff="monospace">
+                  {total}
+                </Text>
+                <Box style={{ flex: 1 }} />
+              </Group>
+            </Stack>
+          </Grid.Col>
+        </Grid>
 
-        <section className="modal-evo">
-          <h3 className="section-title">Evolution Chain</h3>
-          {chain === undefined && <p className="evo-none">Loading evolution chain…</p>}
-          {chain === null && <p className="evo-none">No evolution data available.</p>}
+        <Box>
+          <SectionTitle>Evolution Chain</SectionTitle>
+          {chain === undefined && (
+            <Text c="dimmed" size="sm">
+              Loading evolution chain…
+            </Text>
+          )}
+          {chain === null && (
+            <Text c="dimmed" size="sm">
+              No evolution data available.
+            </Text>
+          )}
           {chain && <EvolutionChain chain={chain} currentId={pokemon.id} onNavigate={onNavigate} />}
-        </section>
-      </div>
-    </div>
+        </Box>
+      </Stack>
+    </Modal>
   );
 }

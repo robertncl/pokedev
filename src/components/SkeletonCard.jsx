@@ -1,11 +1,13 @@
+import { Card, Skeleton, Stack } from '@mantine/core';
+
 export default function SkeletonCard() {
   return (
-    <div className="card neu skeleton" aria-hidden="true">
-      <div className="card-dish neu-inset">
-        <div className="skeleton-circle" />
-      </div>
-      <div className="skeleton-line w-60" />
-      <div className="skeleton-line w-40" />
-    </div>
+    <Card withBorder radius="lg" padding="lg" aria-hidden="true">
+      <Stack align="center" gap="sm">
+        <Skeleton height={132} circle />
+        <Skeleton height={16} width="60%" radius="xl" mt="xs" />
+        <Skeleton height={20} width="80%" radius="xl" />
+      </Stack>
+    </Card>
   );
 }

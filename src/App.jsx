@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Anchor,
+  Button,
+  Center,
+  Container,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
 import { fetchIndex, fetchPokemon, fetchTypeMembers } from './api.js';
 import { PAGE_SIZE } from './constants.js';
-import { useDebounced, useFavorites, useTheme } from './hooks.js';
+import { useFavorites } from './hooks.js';
 import DetailModal from './components/DetailModal.jsx';
 import Header from './components/Header.jsx';
 import Pokeball from './components/Pokeball.jsx';
@@ -12,7 +24,6 @@ import TypeFilter from './components/TypeFilter.jsx';
 const normalize = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export default function App() {
-  const [theme, toggleTheme] = useTheme();
   const [favorites, toggleFavorite] = useFavorites();
 
   const [index, setIndex] = useState(null);
@@ -20,7 +31,7 @@ export default function App() {
   const [retryTick, setRetryTick] = useState(0);
 
   const [search, setSearch] = useState('');
-  const query = useDebounced(search.trim(), 200);
+  const [query] = useDebouncedValue(search.trim(), 200);
   const [selectedType, setSelectedType] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [typeMembers, setTypeMembers] = useState({});
@@ -156,29 +167,37 @@ export default function App() {
 
   if (bootError) {
     return (
-      <div className="boot">
-        <Pokeball size={64} />
-        <p>Couldn't reach PokéAPI. Check your connection.</p>
-        <button className="neu-btn pill-btn" onClick={handleRetry}>
-          Try Again
-        </button>
-      </div>
+      <Center mih="100vh" p="md">
+        <Stack align="center" gap="lg">
+          <Pokeball size={64} />
+          <Text c="dimmed" fw={700} ta="center">
+            Couldn't reach PokéAPI. Check your connection.
+          </Text>
+          <Button radius="xl" size="md" onClick={handleRetry}>
+            Try Again
+          </Button>
+        </Stack>
+      </Center>
     );
   }
 
   if (!index) {
     return (
-      <div className="boot">
-        <Pokeball size={64} spinning />
-        <p>Loading Pokédex…</p>
-      </div>
+      <Center mih="100vh" p="md">
+        <Stack align="center" gap="lg">
+          <Pokeball size={64} spinning />
+          <Text c="dimmed" fw={700}>
+            Loading Pokédex…
+          </Text>
+        </Stack>
+      </Center>
     );
   }
 
   const membersLoading = visible === null;
 
   return (
-    <div className="app">
+    <Container size="lg" py="xl">
       <Header
         search={search}
         onSearchChange={handleSearch}
@@ -186,72 +205,79 @@ export default function App() {
         showFavorites={showFavorites}
         onToggleFavorites={handleToggleFavorites}
         favoriteCount={favorites.size}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
       <TypeFilter selected={selectedType} onSelect={handleSelectType} />
-      <main>
-        {gridError && (
-          <div className="banner" role="alert">
-            <span>Some Pokémon failed to load.</span>
-            <button className="neu-btn pill-btn" onClick={handleRetry}>
+
+      {gridError && (
+        <Alert color="red" radius="md" mb="lg" withCloseButton onClose={() => setGridError(false)}>
+          <Group justify="space-between" wrap="wrap" gap="sm">
+            <Text fw={600}>Some Pokémon failed to load.</Text>
+            <Button size="xs" radius="xl" variant="white" color="red" onClick={handleRetry}>
               Retry
-            </button>
-          </div>
-        )}
-        {membersLoading ? (
-          <div className="grid">
-            {Array.from({ length: 12 }, (_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="empty">
+            </Button>
+          </Group>
+        </Alert>
+      )}
+
+      {membersLoading ? (
+        <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5 }} spacing="lg">
+          {Array.from({ length: 12 }, (_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </SimpleGrid>
+      ) : visible.length === 0 ? (
+        <Center py={64}>
+          <Stack align="center" gap="lg">
             <Pokeball size={56} />
-            <p>No Pokémon found{showFavorites ? ' in your favorites' : ''}.</p>
-            <button className="neu-btn pill-btn" onClick={handleClearFilters}>
+            <Text c="dimmed" fw={700} ta="center">
+              No Pokémon found{showFavorites ? ' in your favorites' : ''}.
+            </Text>
+            <Button radius="xl" variant="default" onClick={handleClearFilters}>
               Clear Filters
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="result-count">
-              Showing {slice.length} of {visible.length} Pokémon
-            </p>
-            <div className="grid">
-              {slice.map((p) =>
-                details[p.id] ? (
-                  <PokemonCard
-                    key={p.id}
-                    pokemon={details[p.id]}
-                    isFavorite={favorites.has(p.id)}
-                    onToggleFavorite={toggleFavorite}
-                    onSelect={setSelected}
-                  />
-                ) : (
-                  <SkeletonCard key={p.id} />
-                )
-              )}
-            </div>
-            {hasMore && (
-              <div ref={sentinelRef} className="load-more-sentinel" role="status">
-                <Pokeball size={28} spinning />
-                <span>Loading more…</span>
-              </div>
+            </Button>
+          </Stack>
+        </Center>
+      ) : (
+        <>
+          <Text c="dimmed" fw={700} size="sm" mb="md">
+            Showing {slice.length} of {visible.length} Pokémon
+          </Text>
+          <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5 }} spacing="lg">
+            {slice.map((p) =>
+              details[p.id] ? (
+                <PokemonCard
+                  key={p.id}
+                  pokemon={details[p.id]}
+                  isFavorite={favorites.has(p.id)}
+                  onToggleFavorite={toggleFavorite}
+                  onSelect={setSelected}
+                />
+              ) : (
+                <SkeletonCard key={p.id} />
+              )
             )}
-          </>
-        )}
-      </main>
-      <footer className="footer">
-        <p>
-          Data from{' '}
-          <a href="https://pokeapi.co" target="_blank" rel="noreferrer">
-            PokéAPI
-          </a>{' '}
-          · Built with React + Vite · Pokémon and Pokémon character names are trademarks of
-          Nintendo.
-        </p>
-      </footer>
+          </SimpleGrid>
+          {hasMore && (
+            <Center ref={sentinelRef} py="xl">
+              <Group gap="sm">
+                <Pokeball size={26} spinning />
+                <Text c="dimmed" fw={700}>
+                  Loading more…
+                </Text>
+              </Group>
+            </Center>
+          )}
+        </>
+      )}
+
+      <Text c="dimmed" size="sm" ta="center" mt={56} lh={1.7}>
+        Data from{' '}
+        <Anchor href="https://pokeapi.co" target="_blank" rel="noreferrer" inherit>
+          PokéAPI
+        </Anchor>{' '}
+        · Built with React + Mantine · Pokémon and Pokémon character names are trademarks of Nintendo.
+      </Text>
+
       {selected && (
         <DetailModal
           pokemon={selected}
@@ -261,6 +287,6 @@ export default function App() {
           onNavigate={openById}
         />
       )}
-    </div>
+    </Container>
   );
 }

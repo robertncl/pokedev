@@ -1,5 +1,6 @@
+import { ActionIcon, Card, Center, Group, Text } from '@mantine/core';
+import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { artworkUrl, formatName, padId } from '../constants.js';
-import { HeartIcon } from './Icons.jsx';
 import TypeBadge from './TypeBadge.jsx';
 
 export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onSelect }) {
@@ -9,8 +10,11 @@ export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onS
   const open = () => onSelect(pokemon);
 
   return (
-    <article
-      className="card neu"
+    <Card
+      data-card
+      withBorder
+      radius="lg"
+      padding="lg"
       role="button"
       tabIndex={0}
       onClick={open}
@@ -21,43 +25,57 @@ export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onS
         }
       }}
       aria-label={`View details for ${formatName(name)}`}
+      style={{ cursor: 'pointer' }}
     >
-      <span className="card-id">{padId(id)}</span>
-      <button
-        className={`heart-btn ${isFavorite ? 'is-fav' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite(id);
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-        aria-label={
-          isFavorite
-            ? `Remove ${formatName(name)} from favorites`
-            : `Add ${formatName(name)} to favorites`
-        }
-        aria-pressed={isFavorite}
-      >
-        <HeartIcon filled={isFavorite} />
-      </button>
-      <div className="card-dish neu-inset">
-        <img
-          src={art}
-          alt=""
-          loading="lazy"
-          width="96"
-          height="96"
-          draggable="false"
-          onError={(e) => {
-            if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+      <Group justify="space-between" align="center" mb="xs" wrap="nowrap">
+        <Text size="xs" fw={800} c="dimmed" lts="0.05em">
+          {padId(id)}
+        </Text>
+        <ActionIcon
+          variant={isFavorite ? 'light' : 'subtle'}
+          color={isFavorite ? 'pokeRed' : 'gray'}
+          radius="xl"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(id);
           }}
-        />
-      </div>
-      <h3 className="card-name">{formatName(name)}</h3>
-      <div className="badge-row">
+          onKeyDown={(e) => e.stopPropagation()}
+          aria-label={
+            isFavorite
+              ? `Remove ${formatName(name)} from favorites`
+              : `Add ${formatName(name)} to favorites`
+          }
+          aria-pressed={isFavorite}
+        >
+          {isFavorite ? <IconHeartFilled size={18} /> : <IconHeart size={18} />}
+        </ActionIcon>
+      </Group>
+
+      <Center>
+        <div className="artCircle" style={{ width: 132, height: 132 }}>
+          <img
+            className="spriteImg"
+            src={art}
+            alt=""
+            loading="lazy"
+            width="96"
+            height="96"
+            draggable="false"
+            onError={(e) => {
+              if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+            }}
+          />
+        </div>
+      </Center>
+
+      <Text ta="center" fw={800} fz="lg" mt="sm" mb="xs">
+        {formatName(name)}
+      </Text>
+      <Group justify="center" gap={6}>
         {types.map((t) => (
           <TypeBadge key={t.type.name} type={t.type.name} />
         ))}
-      </div>
-    </article>
+      </Group>
+    </Card>
   );
 }

@@ -3,19 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PokéDev · Neumorphic Pokédex</title>
-    <meta name="description" content="PokéDev — a neumorphic Pokédex built with React, Vite, and PokéAPI." />
-    <meta name="theme-color" content="#e0e5ec" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#2a2e36" media="(prefers-color-scheme: dark)" />
+    <title>PokéDev · A Modern Pokédex</title>
+    <meta name="description" content="PokéDev — a Pokédex built with React, Mantine, Vite, and PokéAPI." />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#242424" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M 4 50 A 46 46 0 0 1 96 50 Z' fill='%23ee5253'/><path d='M 4 50 A 46 46 0 0 0 96 50 Z' fill='%23f4f7fb'/><circle cx='50' cy='50' r='46' fill='none' stroke='%232f3447' stroke-width='7'/><line x1='4' y1='50' x2='96' y2='50' stroke='%232f3447' stroke-width='7'/><circle cx='50' cy='50' r='14' fill='%23f4f7fb' stroke='%232f3447' stroke-width='7'/><circle cx='50' cy='50' r='5.5' fill='%232f3447'/></svg>" />
     <script>
+      // Prevent color-scheme flash: resolve Mantine's stored scheme before paint.
       (function () {
         try {
-          var saved = localStorage.getItem('pokedev-theme');
-          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-          document.documentElement.dataset.theme = theme;
+          var stored = localStorage.getItem('mantine-color-scheme-value');
+          var scheme =
+            !stored || stored === 'auto'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : stored;
+          document.documentElement.setAttribute('data-mantine-color-scheme', scheme);
         } catch (e) {
-          document.documentElement.dataset.theme = 'light';
+          document.documentElement.setAttribute('data-mantine-color-scheme', 'light');
         }
       })();
     </script>
