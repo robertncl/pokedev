@@ -1,14 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  FlatList,
-  Platform,
-  Pressable,
-  StatusBar as RNStatusBar,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchIndex, fetchPokemon, fetchTypeMembers } from './src/api.js';
 import { PAGE_SIZE } from './src/constants.js';
@@ -21,10 +14,10 @@ import TypeFilter from './src/components/TypeFilter.js';
 import DetailModal from './src/components/DetailModal.js';
 
 const normalize = (v) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
-const topInset = Platform.OS === 'android' ? RNStatusBar.currentHeight || 0 : 0;
 
 function Dex() {
   const { colors, scheme, toggle } = useTheme();
+  const insets = useSafeAreaInsets();
   const [favorites, toggleFavorite] = useFavorites();
 
   const [index, setIndex] = useState(null);
@@ -247,14 +240,14 @@ function Dex() {
     : slice;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: topInset }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <FlatList
         data={data}
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
-        contentContainerStyle={{ gap: 12, paddingBottom: 28 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: insets.bottom + 28 }}
         ListHeaderComponent={header}
         keyboardShouldPersistTaps="handled"
         onEndReachedThreshold={0.6}
@@ -316,8 +309,10 @@ function Dex() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <Dex />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <Dex />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

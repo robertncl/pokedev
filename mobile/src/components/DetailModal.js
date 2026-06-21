@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchEvolutionChain, fetchSpecies } from '../api.js';
 import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS } from '../constants.js';
@@ -32,6 +33,7 @@ function IconBtn({ name, color, active, onPress, label, colors }) {
 
 export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onClose, onNavigate }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [species, setSpecies] = useState(null);
   // chain: undefined = loading, null = unavailable, object = loaded
   const [chain, setChain] = useState(undefined);
@@ -115,7 +117,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
               marginVertical: 10,
             }}
           />
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 32 }}>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 32 + insets.bottom }}>
             <View
               style={{
                 flexDirection: 'row',
