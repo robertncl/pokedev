@@ -34,7 +34,8 @@
             "backgroundColor": "#161719"
           }
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }
