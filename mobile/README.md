@@ -1,6 +1,8 @@
-# PokéDev — Android (React Native / Expo)
+# PokéDev — Mobile (iOS & Android, React Native / Expo)
 
-The Android version of the PokéDev Pokédex, built with **Expo SDK 56** / React Native.
+The mobile version of the PokéDev Pokédex, built with **Expo SDK 56** / React Native.
+One codebase targets **both iOS and Android**, with platform-correct safe areas
+(notch / Dynamic Island / home indicator via `react-native-safe-area-context`).
 It mirrors the web app's features against the same [PokéAPI](https://pokeapi.co):
 
 - Browse all 1025 Pokémon in a 2-column grid with infinite scroll
@@ -32,10 +34,11 @@ UI layer differs (React Native components instead of Mantine/DOM).
 ```bash
 cd mobile
 npm install
-npx expo start            # then press 'a', or scan the QR with Expo Go
+npx expo start            # press 'a' for Android, 'i' for iOS simulator,
+                          # or scan the QR with Expo Go (Android) / Camera (iOS)
 ```
 
-## Build an APK / AAB
+## Build — Android (APK / AAB)
 
 > **Note:** A local Gradle build requires an **x86_64** machine. This repo was developed
 > on an aarch64 (ARM) WSL2 host, where Google's Android NDK — which ships x86_64-only
@@ -67,7 +70,38 @@ Requirements: JDK 17, Android SDK (platform 35, build-tools 35), and the NDK tha
 Gradle auto-installs. On Windows, just open the generated `android/` folder in
 Android Studio and Run.
 
+## Build — iOS (.ipa / simulator)
+
+> **Note:** Apple's build toolchain is **macOS-only** — an `.ipa` cannot be compiled on
+> Linux or Windows at all. Use EAS (cloud, no Mac needed) or a Mac with Xcode. The JS
+> bundles cleanly for iOS here (`npx expo export --platform ios`, 669 modules) and
+> `npx expo-doctor` passes 21/21.
+
+### Option A — EAS Build (recommended, cloud, no Mac required)
+
+```bash
+npm install -g eas-cli
+eas login
+eas build -p ios --profile preview      # simulator/internal build
+eas build -p ios --profile production    # App Store build (needs an Apple Developer account)
+```
+
+A production build / App Store submission requires an Apple Developer Program membership
+($99/yr) for code signing; EAS manages the certificates and provisioning profiles for you.
+
+### Option B — Local build on macOS with Xcode
+
+```bash
+cd mobile
+npx expo prebuild --platform ios   # generates the native ios/ project
+npx expo run:ios                    # build & launch in the iOS Simulator
+# or open ios/PokéDev.xcworkspace in Xcode and Run on a device/simulator
+```
+
+Requirements: macOS, Xcode, and CocoaPods.
+
 ## Config
 
 App identity lives in [app.json](app.json) — name `PokéDev`, Android package
-`com.pokedev.app`, adaptive icon, splash, and automatic (system) color scheme.
+`com.pokedev.app`, iOS bundle id `com.pokedev.app`, adaptive icon, splash, and
+automatic (system) color scheme.
