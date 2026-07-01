@@ -1,6 +1,34 @@
 /* Global app styles. Mantine provides the reset, tokens, and component
    styling; only app-specific flourishes live here. */
 
+:root {
+  /* Spring/bounce timing curves (linear() approximations) — see
+     https://developer.mozilla.org/docs/Web/CSS/easing-function/linear.
+     Fall back to a standard overshoot cubic-bezier where linear() is
+     unsupported (Safari < 17.2, pre-2023 Firefox/Chrome). */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: linear(
+      0, 0.016 0.5%, 0.06 1%, 0.226 2%, 1.116 5.4%, 1.375 6.6%, 1.527 7.7%,
+      1.565 8.2%, 1.585 8.8%, 1.581 9.3%, 1.559 9.8%, 1.458 10.9%, 0.937 14.3%,
+      0.784 15.5%, 0.693 16.6%, 0.67 17.1%, 0.657 17.7%, 0.671 18.7%, 0.729 19.8%,
+      1.042 23.3%, 1.13 24.5%, 1.182 25.6%, 1.201 26.7%, 1.192 27.7%, 1.156 28.8%,
+      0.977 32.2%, 0.925 33.4%, 0.894 34.5%, 0.882 35.6%, 0.887 36.6%, 0.907 37.7%,
+      1.045 42.4%, 1.069 44.5%, 1.059 46.3%, 0.979 50.9%, 0.96 53.4%, 0.966 55.3%,
+      1.013 59.9%, 1.024 62.3%, 0.986 71.2%, 1.008 79.9%, 0.995 88.9%, 1
+    );
+    --ease-bounce: linear(
+      0, 0.214 14.7%, 0.386 23.7%, 0.598 31.9%, 0.999 44.7%, 0.807 52.6%,
+      0.762 56%, 0.747 59.4%, 0.758 62.4%, 0.793 65.6%, 0.999 77.4%, 0.961 81.2%,
+      0.949 84.8%, 0.956 88%, 0.993 95.5%, 1
+    );
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -22,6 +50,11 @@ img {
     light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5)),
     light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-7))
   );
+  /* Parallax layer: floats opposite the card's tilt so the artwork reads
+     as sitting above the card's surface. Set to 0 by useTilt on pointer
+     leave, and never set at all on touch/reduced-motion (stays put). */
+  translate: var(--tilt-px, 0px) var(--tilt-py, 0px);
+  transition: translate 0.5s var(--ease-spring);
 }
 
 .spriteImg {
@@ -29,26 +62,86 @@ img {
   height: 78%;
   object-fit: contain;
   filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22));
-  transition: transform 0.25s ease;
+  transition: scale 0.25s ease;
+  scale: 1;
 }
 
 [data-card]:hover .spriteImg {
-  transform: scale(1.08);
+  scale: 1.08;
+}
+
+/* ---------- 3D pointer-tilt card ---------- */
+
+[data-card] {
+  position: relative;
+  /* Identity transforms up front so hover/press never trigger a surprise
+     stacking-context change (see individual-transform-properties guidance). */
+  scale: 1;
+  transform: perspective(900px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transform-style: preserve-3d;
+  transition: scale 0.5s var(--ease-spring);
+}
+
+[data-card]:active {
+  scale: 0.97;
 }
 
 @media (hover: hover) {
   [data-card] {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: scale 0.5s var(--ease-spring), box-shadow 0.3s ease, transform 0.5s var(--ease-spring);
+    box-shadow: 0 var(--tilt-shadow-y, 4px) var(--tilt-shadow-blur, 10px) rgba(0, 0, 0, var(--tilt-shadow-o, 0.08));
   }
 
   [data-card]:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--mantine-shadow-md);
+    --tilt-shadow-y: 18px;
+    --tilt-shadow-blur: 32px;
+    --tilt-shadow-o: 0.22;
+  }
+
+  /* While the pointer is actively moving, useTilt clears the transition
+     inline so rotation tracks the cursor without lag; it restores on leave. */
+
+  /* Glare sheen that follows the pointer, for a tactile "glossy card" feel. */
+  [data-card]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--glare-o, 0);
+    transition: opacity 0.4s ease;
+    background: radial-gradient(
+      circle at var(--glare-x, 50%) var(--glare-y, 50%),
+      light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.14)),
+      transparent 45%
+    );
   }
 }
 
-[data-card]:active {
-  transform: scale(0.98);
+@media (prefers-reduced-motion: reduce) {
+  [data-card],
+  [data-card]::after,
+  .artCircle,
+  .spriteImg {
+    transition: none !important;
+  }
+}
+
+/* ---------- pressable utility (icon buttons, etc.) ---------- */
+
+.pressable {
+  scale: 1;
+  transition: scale 0.5s var(--ease-spring);
+}
+
+.pressable:active {
+  scale: 0.88;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable {
+    transition: none;
+  }
 }
 
 /* ---------- pokéball logo / spinner ---------- */
@@ -77,13 +170,16 @@ img {
 
 @media (prefers-reduced-motion: no-preference) {
   [data-card] {
-    animation: cardIn 0.3s ease both;
+    /* translate/scale (not transform) so this never collides with the
+       perspective/rotate tilt transform declared above. */
+    animation: cardIn 0.45s var(--ease-spring) both;
   }
 
   @keyframes cardIn {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      translate: 0 14px;
+      scale: 0.94;
     }
   }
 }

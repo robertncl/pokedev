@@ -173,7 +173,7 @@ export default function App() {
           <Text c="dimmed" fw={700} ta="center">
             Couldn't reach PokéAPI. Check your connection.
           </Text>
-          <Button radius="xl" size="md" onClick={handleRetry}>
+          <Button className="pressable" radius="xl" size="md" onClick={handleRetry}>
             Try Again
           </Button>
         </Stack>
@@ -212,7 +212,7 @@ export default function App() {
         <Alert color="red" radius="md" mb="lg" withCloseButton onClose={() => setGridError(false)}>
           <Group justify="space-between" wrap="wrap" gap="sm">
             <Text fw={600}>Some Pokémon failed to load.</Text>
-            <Button size="xs" radius="xl" variant="white" color="red" onClick={handleRetry}>
+            <Button className="pressable" size="xs" radius="xl" variant="white" color="red" onClick={handleRetry}>
               Retry
             </Button>
           </Group>
@@ -232,7 +232,7 @@ export default function App() {
             <Text c="dimmed" fw={700} ta="center">
               No Pokémon found{showFavorites ? ' in your favorites' : ''}.
             </Text>
-            <Button radius="xl" variant="default" onClick={handleClearFilters}>
+            <Button className="pressable" radius="xl" variant="default" onClick={handleClearFilters}>
               Clear Filters
             </Button>
           </Stack>

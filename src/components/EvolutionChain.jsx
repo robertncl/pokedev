@@ -38,6 +38,7 @@ export default function EvolutionChain({ chain, currentId, onNavigate }) {
               return (
                 <UnstyledButton
                   key={stage.id}
+                  className={isCurrent ? undefined : 'pressable'}
                   onClick={() => onNavigate(stage.id)}
                   disabled={isCurrent}
                   aria-label={

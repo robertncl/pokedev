@@ -17,6 +17,7 @@ import {
 import { IconHeart, IconHeartFilled, IconSparkles, IconX } from '@tabler/icons-react';
 import { fetchEvolutionChain, fetchSpecies } from '../api.js';
 import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS } from '../constants.js';
+import { useTilt } from '../hooks.js';
 import EvolutionChain from './EvolutionChain.jsx';
 import StatBar from './StatBar.jsx';
 import TypeBadge from './TypeBadge.jsx';
@@ -47,6 +48,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
   // chain: undefined = loading, null = unavailable, object = loaded
   const [chain, setChain] = useState(undefined);
   const [shiny, setShiny] = useState(false);
+  const tiltRef = useTilt();
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +98,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
       withCloseButton={false}
       overlayProps={{ backgroundOpacity: 0.55, blur: 4 }}
       scrollAreaComponent={ScrollArea.Autosize}
+      transitionProps={{ transition: 'pop', duration: 300, timingFunction: 'var(--ease-spring)' }}
       aria-label={`${formatName(pokemon.name)} details`}
     >
       <Stack gap="lg">
@@ -116,6 +119,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
           <Group gap="xs" wrap="nowrap">
             <Tooltip label={shiny ? 'Show regular artwork' : 'Show shiny artwork'} withArrow>
               <ActionIcon
+                className="pressable"
                 variant={shiny ? 'filled' : 'default'}
                 color="yellow"
                 size="lg"
@@ -128,6 +132,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
               </ActionIcon>
             </Tooltip>
             <ActionIcon
+              className="pressable"
               variant={isFavorite ? 'filled' : 'default'}
               color="pokeRed"
               size="lg"
@@ -138,7 +143,7 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
             >
               {isFavorite ? <IconHeartFilled size={18} /> : <IconHeart size={18} />}
             </ActionIcon>
-            <ActionIcon variant="default" size="lg" radius="xl" onClick={onClose} aria-label="Close details">
+            <ActionIcon className="pressable" variant="default" size="lg" radius="xl" onClick={onClose} aria-label="Close details">
               <IconX size={18} />
             </ActionIcon>
           </Group>
@@ -147,16 +152,22 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
         <Grid gutter="xl" align="flex-start">
           <Grid.Col span={{ base: 12, sm: 5 }}>
             <Stack align="center" gap="md">
-              <div className="artCircle" style={{ width: 260, maxWidth: '72vw', aspectRatio: 1 }}>
-                <img
-                  key={art}
-                  className="spriteImg"
-                  src={art}
-                  alt={formatName(pokemon.name)}
-                  onError={() => {
-                    if (shiny) setShiny(false);
-                  }}
-                />
+              <div
+                data-card
+                ref={tiltRef}
+                style={{ width: 260, maxWidth: '72vw', aspectRatio: 1, borderRadius: '50%' }}
+              >
+                <div className="artCircle" style={{ width: '100%', height: '100%' }}>
+                  <img
+                    key={art}
+                    className="spriteImg"
+                    src={art}
+                    alt={formatName(pokemon.name)}
+                    onError={() => {
+                      if (shiny) setShiny(false);
+                    }}
+                  />
+                </div>
               </div>
               <Group justify="center" gap={6}>
                 {pokemon.types.map((t) => (

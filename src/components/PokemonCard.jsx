@@ -1,6 +1,7 @@
 import { ActionIcon, Card, Center, Group, Text } from '@mantine/core';
 import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { artworkUrl, formatName, padId } from '../constants.js';
+import { useTilt } from '../hooks.js';
 import TypeBadge from './TypeBadge.jsx';
 
 export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onSelect }) {
@@ -8,10 +9,12 @@ export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onS
   const art = sprites?.other?.['official-artwork']?.front_default || artworkUrl(id);
   const fallback = sprites?.front_default;
   const open = () => onSelect(pokemon);
+  const tiltRef = useTilt();
 
   return (
     <Card
       data-card
+      ref={tiltRef}
       withBorder
       radius="lg"
       padding="lg"
@@ -32,6 +35,7 @@ export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onS
           {padId(id)}
         </Text>
         <ActionIcon
+          className="pressable"
           variant={isFavorite ? 'light' : 'subtle'}
           color={isFavorite ? 'pokeRed' : 'gray'}
           radius="xl"

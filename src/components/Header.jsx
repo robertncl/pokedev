@@ -52,7 +52,14 @@ export default function Header({
         leftSection={<IconSearch size={18} />}
         rightSection={
           search ? (
-            <ActionIcon variant="subtle" color="gray" radius="xl" onClick={() => onSearchChange('')} aria-label="Clear search">
+            <ActionIcon
+              className="pressable"
+              variant="subtle"
+              color="gray"
+              radius="xl"
+              onClick={() => onSearchChange('')}
+              aria-label="Clear search"
+            >
               <IconX size={16} />
             </ActionIcon>
           ) : null
@@ -63,6 +70,7 @@ export default function Header({
       <Group gap="xs" wrap="nowrap">
         <Indicator label={favoriteCount} size={18} disabled={favoriteCount === 0} color="pokeRed" offset={4}>
           <ActionIcon
+            className="pressable"
             variant={showFavorites ? 'filled' : 'default'}
             color="pokeRed"
             size="lg"
@@ -75,6 +83,7 @@ export default function Header({
           </ActionIcon>
         </Indicator>
         <ActionIcon
+          className="pressable"
           variant="default"
           size="lg"
           radius="xl"
