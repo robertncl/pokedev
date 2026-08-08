@@ -10,17 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mantine/core": "9.4.1",
-    "@mantine/hooks": "9.4.1",
-    "@tabler/icons-react": "3.44.0",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "@mantine/core": "9.5.1",
+    "@mantine/hooks": "9.5.1",
+    "@tabler/icons-react": "3.46.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "6.0.3",
-    "postcss": "8.5.16",
+    "@vitejs/plugin-react": "6.0.5",
+    "postcss": "8.5.26",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
-    "vite": "8.1.2"
+    "vite": "8.2.1"
   }
 }
