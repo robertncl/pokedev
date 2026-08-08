@@ -13,11 +13,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@mantine/core": "9.4.1",
-    "@mantine/hooks": "9.4.1",
-    "@tabler/icons-react": "3.44.0",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "@mantine/core": "9.5.1",
+    "@mantine/hooks": "9.5.1",
+    "@tabler/icons-react": "3.46.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
