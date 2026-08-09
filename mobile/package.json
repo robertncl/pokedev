@@ -25,6 +25,9 @@
     "test:coverage": "jest --coverage"
   },
   "private": true,
+  "overrides": {
+    "uuid": "14.0.1"
+  },
   "devDependencies": {
     "@react-native/jest-preset": "^0.86.2",
     "@testing-library/react-native": "^14.0.1",
