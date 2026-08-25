@@ -6,7 +6,7 @@
     "@expo/vector-icons": "15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "57.0.15",
-    "expo-asset": "57.0.13",
+    "expo-asset": "~57.0.13",
     "expo-font": "57.0.1",
     "expo-splash-screen": "57.0.7",
     "expo-status-bar": "57.0.1",
@@ -26,7 +26,13 @@
   },
   "private": true,
   "overrides": {
-    "uuid": "14.0.1"
+    "uuid": "14.0.1",
+    "@expo/plist": {
+      "@xmldom/xmldom": "0.8.13"
+    },
+    "plist": {
+      "@xmldom/xmldom": "0.9.10"
+    }
   },
   "devDependencies": {
     "@react-native/jest-preset": "^0.86.2",
