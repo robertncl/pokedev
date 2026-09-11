@@ -27,12 +27,11 @@
   "private": true,
   "overrides": {
     "uuid": "14.0.1",
-    "@xmldom/xmldom": "0.8.15",
     "@expo/plist": {
       "@xmldom/xmldom": "0.8.15"
     },
     "plist": {
-      "@xmldom/xmldom": "0.8.15"
+      "@xmldom/xmldom": "0.9.12"
     }
   },
   "devDependencies": {
