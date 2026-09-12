@@ -32,6 +32,9 @@
     },
     "plist": {
       "@xmldom/xmldom": "0.9.12"
+    },
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "3.15.2"
     }
   },
   "devDependencies": {
