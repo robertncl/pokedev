@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 const FAVORITES_KEY = 'pokedev-favorites';
 const MAX_TILT_DEG = 10;
 const MAX_PARALLAX_PX = 14;
 
+const clamp01 = (value) => Math.min(1, Math.max(0, value));
+
 // Pointer-driven 3D tilt: sets CSS custom properties imperatively (no
-// re-renders) so the card's `transform`/`translate` (declared in index.css)
-// track the pointer 1:1. Only active for fine-pointer/hover-capable
-// devices with no motion-reduction preference — touch and reduced-motion
-// users get the static hover/press styles instead.
+// re-renders) that the `.tilt` styles in index.css read, so the surface tracks
+// the pointer 1:1. Only active for fine-pointer/hover-capable devices with no
+// motion-reduction preference — touch and reduced-motion users get the static
+// hover/press styles instead.
 export function useTilt() {
   const ref = useRef(null);
 
@@ -19,10 +21,14 @@ export function useTilt() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!canTilt || reduceMotion) return;
 
+    // Measured once per hover: reading it on every move would force a style
+    // recalc each time, and since it includes the tilt it would skew the angles.
+    let rect = null;
+
     const handleMove = (e) => {
-      const rect = node.getBoundingClientRect();
-      const px = (e.clientX - rect.left) / rect.width;
-      const py = (e.clientY - rect.top) / rect.height;
+      rect ??= node.getBoundingClientRect();
+      const px = clamp01((e.clientX - rect.left) / rect.width);
+      const py = clamp01((e.clientY - rect.top) / rect.height);
       node.style.transition = 'none';
       node.style.setProperty('--tilt-rx', `${((0.5 - py) * MAX_TILT_DEG * 2).toFixed(2)}deg`);
       node.style.setProperty('--tilt-ry', `${((px - 0.5) * MAX_TILT_DEG * 2).toFixed(2)}deg`);
@@ -33,6 +39,7 @@ export function useTilt() {
       node.style.setProperty('--glare-o', '1');
     };
     const handleLeave = () => {
+      rect = null;
       node.style.transition = '';
       node.style.setProperty('--tilt-rx', '0deg');
       node.style.setProperty('--tilt-ry', '0deg');
@@ -52,31 +59,59 @@ export function useTilt() {
   return ref;
 }
 
+// Favorites are a small external store over localStorage, read with
+// useSyncExternalStore so the prerendered page (which has no storage, hence
+// no favorites) hydrates cleanly before the saved set is swapped in.
+const NO_FAVORITES = new Set();
+const listeners = new Set();
+let favorites; // cached snapshot; undefined means "re-read from storage"
+
+function readFavorites() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+const getFavorites = () => (favorites ??= readFavorites());
+
+function notify() {
+  for (const listener of listeners) listener();
+}
+
+// Keeps tabs in sync. `key` is null when storage was cleared.
+function handleStorage(e) {
+  if (e.key !== FAVORITES_KEY && e.key !== null) return;
+  favorites = undefined;
+  notify();
+}
+
+function subscribe(listener) {
+  if (listeners.size === 0) window.addEventListener('storage', handleStorage);
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) {
+      window.removeEventListener('storage', handleStorage);
+      favorites = undefined;
+    }
+  };
+}
+
+function toggleFavorite(id) {
+  const next = new Set(getFavorites());
+  if (!next.delete(id)) next.add(id);
+  favorites = next;
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+  } catch {
+    /* storage unavailable — favorites just won't persist */
+  }
+  notify();
+}
+
 export function useFavorites() {
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
-    } catch {
-      return new Set();
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-    } catch {
-      /* storage unavailable — favorites just won't persist */
-    }
-  }, [favorites]);
-
-  const toggleFavorite = useCallback((id) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  return [favorites, toggleFavorite];
+  const current = useSyncExternalStore(subscribe, getFavorites, () => NO_FAVORITES);
+  return [current, toggleFavorite];
 }

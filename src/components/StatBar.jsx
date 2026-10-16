@@ -1,31 +1,24 @@
-import { Group, Progress, Text } from '@mantine/core';
-
-function statColor(value) {
+function statBand(value) {
   if (value >= 115) return 'teal';
   if (value >= 85) return 'green';
   if (value >= 55) return 'yellow';
   return 'red';
 }
 
+// `value` is undefined while the detail data loads: the row keeps its place
+// with an empty bar, which then animates to the stat.
 export default function StatBar({ label, value }) {
+  const loaded = value != null;
   // 180 ≈ a very high base stat; anything beyond just fills the bar
-  const pct = Math.min(100, Math.round((value / 180) * 100));
+  const pct = loaded ? Math.min(100, Math.round((value / 180) * 100)) : 0;
   return (
-    <Group gap="sm" wrap="nowrap">
-      <Text w={64} size="sm" fw={700} c="dimmed">
-        {label}
-      </Text>
-      <Text w={32} ta="right" size="sm" fw={800} ff="monospace">
-        {value}
-      </Text>
-      <Progress
-        value={pct}
-        color={statColor(value)}
-        size="lg"
-        radius="xl"
-        transitionDuration={600}
-        style={{ flex: 1 }}
-      />
-    </Group>
+    <div className="stat-row">
+      <span className="stat-label">{label}</span>
+      <span className="stat-value">{value}</span>
+      {/* Decorative: the number beside it carries the information. */}
+      <span className="stat-track" aria-hidden="true">
+        <span className="stat-fill" data-band={loaded ? statBand(value) : undefined} style={{ width: `${pct}%` }} />
+      </span>
+    </div>
   );
 }

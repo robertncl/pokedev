@@ -1,251 +1,247 @@
-import { useEffect, useState } from 'react';
-import {
-  ActionIcon,
-  Badge,
-  Box,
-  Card,
-  Grid,
-  Group,
-  Modal,
-  ScrollArea,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-  Tooltip,
-} from '@mantine/core';
-import { IconHeart, IconHeartFilled, IconSparkles, IconX } from '@tabler/icons-react';
-import { fetchEvolutionChain, fetchSpecies } from '../api.js';
-import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS } from '../constants.js';
+import { useEffect, useRef, useState } from 'react';
+import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS, thumbUrl } from '../constants.js';
+import { fetchDetails, getPokemon } from '../data.js';
 import { useTilt } from '../hooks.js';
 import EvolutionChain from './EvolutionChain.jsx';
+import { CloseIcon, HeartIcon, SparklesIcon } from './Icons.jsx';
 import StatBar from './StatBar.jsx';
 import TypeBadge from './TypeBadge.jsx';
 
-function SectionTitle({ children }) {
-  return (
-    <Text tt="uppercase" fw={800} c="dimmed" size="sm" mb="sm" style={{ letterSpacing: '0.12em' }}>
-      {children}
-    </Text>
-  );
+// The detail record for `id`: `details` is null while loading, `error` is set
+// if the request failed, and `retry` refetches.
+function useDetails(id) {
+  const [state, setState] = useState({ id: null, details: null, error: false });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDetails(id).then(
+      (details) => {
+        if (!cancelled) setState({ id, details, error: false });
+      },
+      () => {
+        if (!cancelled) setState({ id, details: null, error: true });
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [id, attempt]);
+
+  const current = state.id === id ? state : { details: null, error: false };
+  const retry = () => {
+    setState({ id: null, details: null, error: false });
+    setAttempt((n) => n + 1);
+  };
+  return { ...current, retry };
+}
+
+// Plays the exit transition (`[data-closing]` in index.css) before closing.
+// Exit transitions on the top layer aren't supported everywhere, so this
+// works the same in every browser instead of relying on them.
+async function closeWithTransition(dialog) {
+  if (!dialog.open || dialog.hasAttribute('data-closing')) return;
+  dialog.setAttribute('data-closing', '');
+  const transitions = (dialog.getAnimations?.({ subtree: true }) ?? []).filter((a) => a.effect?.target === dialog);
+  await Promise.race([
+    Promise.allSettled(transitions.map((a) => a.finished)),
+    new Promise((resolve) => setTimeout(resolve, 500)),
+  ]);
+  dialog.close();
 }
 
 function Fact({ label, value }) {
   return (
-    <Card withBorder radius="md" padding="sm" ta="center">
-      <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-        {label}
-      </Text>
-      <Text fw={800} fz="lg">
-        {value}
-      </Text>
-    </Card>
+    <div className="fact">
+      <div className="fact-label">{label}</div>
+      <div className="fact-value">{value}</div>
+    </div>
   );
 }
 
-export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onClose, onNavigate }) {
-  const [species, setSpecies] = useState(null);
-  // chain: undefined = loading, null = unavailable, object = loaded
-  const [chain, setChain] = useState(undefined);
-  const [shiny, setShiny] = useState(false);
+export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose, onNavigate }) {
+  const pokemon = getPokemon(id);
+  const name = formatName(pokemon.name);
+  const dialogRef = useRef(null);
   const tiltRef = useTilt();
+  const { details, error, retry } = useDetails(id);
+  // Keyed by id so navigating to another Pokémon resets to regular artwork.
+  const [shinyId, setShinyId] = useState(null);
+  const shiny = shinyId === id;
+  const [loadedArt, setLoadedArt] = useState(() => new Set());
 
   useEffect(() => {
-    let cancelled = false;
-    setSpecies(null);
-    setChain(undefined);
-    setShiny(false);
-    fetchSpecies(pokemon.species.url)
-      .then((sp) => {
-        if (cancelled) return;
-        setSpecies(sp);
-        if (!sp.evolution_chain?.url) {
-          setChain(null);
-          return;
-        }
-        return fetchEvolutionChain(sp.evolution_chain.url).then((evo) => {
-          if (!cancelled) setChain(evo.chain);
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setChain(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [pokemon]);
+    const dialog = dialogRef.current;
+    if (!dialog.open) dialog.showModal();
+  }, []);
 
-  const art = shiny
-    ? pokemon.sprites?.other?.['official-artwork']?.front_shiny || shinyArtworkUrl(pokemon.id)
-    : pokemon.sprites?.other?.['official-artwork']?.front_default || artworkUrl(pokemon.id);
+  const requestClose = () => closeWithTransition(dialogRef.current);
 
-  const flavor = species
-    ? ([...species.flavor_text_entries].reverse().find((f) => f.language.name === 'en')?.flavor_text || '')
-        .replace(/\s+/g, ' ')
-        .trim()
-    : '';
-  const genus = species?.genera?.find((g) => g.language.name === 'en')?.genus;
-  const total = pokemon.stats.reduce((sum, s) => sum + s.base_stat, 0);
+  // Esc, and backdrop clicks via closedby="any", arrive as cancel events:
+  // route them through the animated close.
+  const handleCancel = (e) => {
+    e.preventDefault();
+    requestClose();
+  };
+
+  // Light dismiss where `closedby` isn't supported: backdrop clicks target the
+  // dialog itself, outside its box.
+  const handleClick = (e) => {
+    if ('closedBy' in HTMLDialogElement.prototype || e.target !== e.currentTarget) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const inside = e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom;
+    if (!inside) requestClose();
+  };
+
+  // Full-size artwork comes from GitHub. Until it arrives, show what's already
+  // cached: the regular artwork when switching to shiny, else the thumbnail.
+  const regularArt = artworkUrl(id);
+  const art = shiny ? shinyArtworkUrl(id) : regularArt;
+  const artReady = loadedArt.has(art);
+  const placeholder = loadedArt.has(regularArt) ? regularArt : thumbUrl(id);
+
+  const total = details?.stats.reduce((sum, stat) => sum + stat, 0);
+
+  let flavor;
+  if (error) {
+    flavor = (
+      <>
+        Couldn&apos;t load details.{' '}
+        <button type="button" className="link-button" onClick={retry}>
+          Retry
+        </button>
+      </>
+    );
+  } else if (details) {
+    flavor = details.flavor || 'No Pokédex entry available.';
+  } else {
+    flavor = 'Loading Pokédex entry…';
+  }
+
+  let evolution;
+  if (details?.evolution) {
+    evolution = <EvolutionChain levels={details.evolution} currentId={id} onNavigate={onNavigate} />;
+  } else {
+    evolution = <p className="muted">{details || error ? 'No evolution data available.' : 'Loading evolution chain…'}</p>;
+  }
 
   return (
-    <Modal
-      opened
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      closedby="any"
+      aria-label={`${name} details`}
+      onCancel={handleCancel}
       onClose={onClose}
-      size="xl"
-      radius="lg"
-      centered
-      padding="lg"
-      withCloseButton={false}
-      overlayProps={{ backgroundOpacity: 0.55, blur: 4 }}
-      scrollAreaComponent={ScrollArea.Autosize}
-      transitionProps={{ transition: 'pop', duration: 300, timingFunction: 'var(--ease-spring)' }}
-      aria-label={`${formatName(pokemon.name)} details`}
+      onClick={handleClick}
     >
-      <Stack gap="lg">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Group gap="xs" align="baseline" wrap="wrap" style={{ rowGap: 4 }}>
-            <Text size="sm" fw={800} c="dimmed">
-              {padId(pokemon.id)}
-            </Text>
-            <Title order={2} fz={{ base: 24, sm: 30 }}>
-              {formatName(pokemon.name)}
-            </Title>
-            {genus && (
-              <Text c="dimmed" fw={600}>
-                {genus}
-              </Text>
-            )}
-          </Group>
-          <Group gap="xs" wrap="nowrap">
-            <Tooltip label={shiny ? 'Show regular artwork' : 'Show shiny artwork'} withArrow>
-              <ActionIcon
-                className="pressable"
-                variant={shiny ? 'filled' : 'default'}
-                color="yellow"
-                size="lg"
-                radius="xl"
-                onClick={() => setShiny((s) => !s)}
-                aria-pressed={shiny}
-                aria-label="Toggle shiny artwork"
-              >
-                <IconSparkles size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <ActionIcon
-              className="pressable"
-              variant={isFavorite ? 'filled' : 'default'}
-              color="pokeRed"
-              size="lg"
-              radius="xl"
-              onClick={() => onToggleFavorite(pokemon.id)}
+      <div className="modal-body">
+        <div className="modal-header">
+          <div className="modal-heading">
+            <span className="modal-number">{padId(id)}</span>
+            <h2 className="modal-title">{name}</h2>
+            {details?.genus && <span className="modal-genus">{details.genus}</span>}
+          </div>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="icon-button lg"
+              data-variant={shiny ? 'filled' : 'default'}
+              data-color="yellow"
+              data-tooltip={shiny ? 'Show regular artwork' : 'Show shiny artwork'}
+              onClick={() => setShinyId(shiny ? null : id)}
+              aria-pressed={shiny}
+              aria-label="Toggle shiny artwork"
+            >
+              <SparklesIcon size={18} />
+            </button>
+            <button
+              type="button"
+              className="icon-button lg"
+              data-variant={isFavorite ? 'filled' : 'default'}
+              onClick={() => onToggleFavorite(id)}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              {isFavorite ? <IconHeartFilled size={18} /> : <IconHeart size={18} />}
-            </ActionIcon>
-            <ActionIcon className="pressable" variant="default" size="lg" radius="xl" onClick={onClose} aria-label="Close details">
-              <IconX size={18} />
-            </ActionIcon>
-          </Group>
-        </Group>
+              <HeartIcon filled={isFavorite} size={18} />
+            </button>
+            <button
+              type="button"
+              className="icon-button lg"
+              data-variant="default"
+              onClick={requestClose}
+              aria-label="Close details"
+            >
+              <CloseIcon size={18} />
+            </button>
+          </div>
+        </div>
 
-        <Grid gutter="xl" align="flex-start">
-          <Grid.Col span={{ base: 12, sm: 5 }}>
-            <Stack align="center" gap="md">
-              <div
-                data-card
-                ref={tiltRef}
-                style={{ width: 260, maxWidth: '72vw', aspectRatio: 1, borderRadius: '50%' }}
-              >
-                <div className="artCircle" style={{ width: '100%', height: '100%' }}>
-                  <img
-                    key={art}
-                    className="spriteImg"
-                    src={art}
-                    alt={formatName(pokemon.name)}
-                    onError={() => {
-                      if (shiny) setShiny(false);
-                    }}
-                  />
-                </div>
-              </div>
-              <Group justify="center" gap={6}>
-                {pokemon.types.map((t) => (
-                  <TypeBadge key={t.type.name} type={t.type.name} size="md" />
-                ))}
-              </Group>
-              <Text c="dimmed" ta="center" size="sm" lh={1.6} maw={340}>
-                {species ? flavor || 'No Pokédex entry available.' : 'Loading Pokédex entry…'}
-              </Text>
-            </Stack>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 7 }}>
-            <SimpleGrid cols={3} spacing="sm" mb="lg">
-              <Fact label="Height" value={`${(pokemon.height / 10).toFixed(1)} m`} />
-              <Fact label="Weight" value={`${(pokemon.weight / 10).toFixed(1)} kg`} />
-              <Fact label="Base XP" value={pokemon.base_experience ?? '—'} />
-            </SimpleGrid>
-
-            <SectionTitle>Abilities</SectionTitle>
-            <Group gap="xs" mb="lg">
-              {pokemon.abilities.map((a) => (
-                <Badge
-                  key={`${a.ability.name}-${a.slot}`}
-                  variant="default"
-                  size="lg"
-                  radius="sm"
-                  fw={700}
-                  style={{ textTransform: 'none' }}
-                >
-                  {formatName(a.ability.name)}
-                  {a.is_hidden && (
-                    <Text span c="dimmed" fz="xs">
-                      {' '}
-                      · hidden
-                    </Text>
-                  )}
-                </Badge>
-              ))}
-            </Group>
-
-            <SectionTitle>Base Stats</SectionTitle>
-            <Stack gap="sm">
-              {pokemon.stats.map((s) => (
-                <StatBar
-                  key={s.stat.name}
-                  label={STAT_LABELS[s.stat.name] || formatName(s.stat.name)}
-                  value={s.base_stat}
+        <div className="modal-grid">
+          <div className="modal-art">
+            <div ref={tiltRef} className="tilt art-hero">
+              <div className="dish">
+                {!artReady && <img className="sprite" src={placeholder} alt="" />}
+                <img
+                  key={art}
+                  className="sprite"
+                  src={art}
+                  alt={name}
+                  hidden={!artReady}
+                  onLoad={() => setLoadedArt((prev) => new Set(prev).add(art))}
+                  onError={() => {
+                    if (shiny) setShinyId(null);
+                  }}
                 />
+              </div>
+            </div>
+            <div className="badges">
+              {pokemon.types.map((type) => (
+                <TypeBadge key={type} type={type} size="md" />
               ))}
-              <Group gap="sm" wrap="nowrap" mt={4}>
-                <Text w={64} size="sm" fw={800}>
-                  Total
-                </Text>
-                <Text w={32} ta="right" size="sm" fw={800} c="pokeRed" ff="monospace">
-                  {total}
-                </Text>
-                <Box style={{ flex: 1 }} />
-              </Group>
-            </Stack>
-          </Grid.Col>
-        </Grid>
+            </div>
+            <p className="flavor">{flavor}</p>
+          </div>
 
-        <Box>
-          <SectionTitle>Evolution Chain</SectionTitle>
-          {chain === undefined && (
-            <Text c="dimmed" size="sm">
-              Loading evolution chain…
-            </Text>
-          )}
-          {chain === null && (
-            <Text c="dimmed" size="sm">
-              No evolution data available.
-            </Text>
-          )}
-          {chain && <EvolutionChain chain={chain} currentId={pokemon.id} onNavigate={onNavigate} />}
-        </Box>
-      </Stack>
-    </Modal>
+          <div>
+            <div className="facts">
+              <Fact label="Height" value={details ? `${(details.height / 10).toFixed(1)} m` : '…'} />
+              <Fact label="Weight" value={details ? `${(details.weight / 10).toFixed(1)} kg` : '…'} />
+              <Fact label="Base XP" value={details ? (details.baseExp ?? '—') : '…'} />
+            </div>
+
+            <h3 className="section-title">Abilities</h3>
+            <div className="abilities">
+              {details ? (
+                details.abilities.map((ability, i) => (
+                  <span key={i} className="ability">
+                    {formatName(ability.name)}
+                    {ability.hidden && <span className="ability-hidden"> · hidden</span>}
+                  </span>
+                ))
+              ) : (
+                <span className="muted">{error ? '—' : 'Loading…'}</span>
+              )}
+            </div>
+
+            <h3 className="section-title">Base Stats</h3>
+            <div className="stats">
+              {STAT_LABELS.map((label, i) => (
+                <StatBar key={label} label={label} value={details?.stats[i]} />
+              ))}
+              <div className="stat-row stat-total">
+                <span className="stat-label">Total</span>
+                <span className="stat-value">{total}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section>
+          <h3 className="section-title">Evolution Chain</h3>
+          {evolution}
+        </section>
+      </div>
+    </dialog>
   );
 }

@@ -1,82 +1,43 @@
 import { Fragment } from 'react';
-import { Group, Stack, Text, UnstyledButton } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons-react';
-import { idFromUrl } from '../api.js';
-import { artworkUrl, formatName } from '../constants.js';
+import { formatName, thumbUrl } from '../constants.js';
+import { getPokemon, prefetchDetails } from '../data.js';
+import { ChevronRightIcon } from './Icons.jsx';
 
-// Flatten the recursive chain into stages: [[base], [stage 2...], [stage 3...]]
-// Branched evolutions (e.g. Eevee) become multiple nodes within one stage.
-function flattenChain(root) {
-  const levels = [];
-  let frontier = [root];
-  while (frontier.length > 0) {
-    levels.push(
-      frontier.map((node) => ({ name: node.species.name, id: idFromUrl(node.species.url) }))
-    );
-    frontier = frontier.flatMap((node) => node.evolves_to);
-  }
-  return levels;
-}
-
-export default function EvolutionChain({ chain, currentId, onNavigate }) {
-  const levels = flattenChain(chain);
+// `levels` lists dex numbers by stage: [[base], [stage 2...], [stage 3...]].
+// Branched evolutions (e.g. Eevee) have several entries in one stage.
+export default function EvolutionChain({ levels, currentId, onNavigate }) {
   if (levels.length < 2) {
-    return (
-      <Text c="dimmed" size="sm">
-        This Pokémon does not evolve.
-      </Text>
-    );
+    return <p className="muted">This Pokémon does not evolve.</p>;
   }
   return (
-    <Group gap="md" align="center" wrap="wrap">
-      {levels.map((group, i) => (
+    <div className="evolution">
+      {levels.map((ids, i) => (
         <Fragment key={i}>
-          {i > 0 && <IconChevronRight size={22} stroke={2.5} color="var(--mantine-color-dimmed)" />}
-          <Group gap="sm" wrap="wrap">
-            {group.map((stage) => {
-              const isCurrent = stage.id === currentId;
+          {i > 0 && <ChevronRightIcon className="evolution-arrow" size={22} stroke={2.5} />}
+          <div className="evolution-stage">
+            {ids.map((id) => {
+              const isCurrent = id === currentId;
+              const name = formatName(getPokemon(id).name);
               return (
-                <UnstyledButton
-                  key={stage.id}
-                  className={isCurrent ? undefined : 'pressable'}
-                  onClick={() => onNavigate(stage.id)}
+                <button
+                  key={id}
+                  type="button"
+                  className="evolution-mon"
+                  onClick={() => onNavigate(id)}
+                  onPointerEnter={() => prefetchDetails(id)}
                   disabled={isCurrent}
-                  aria-label={
-                    isCurrent
-                      ? `${formatName(stage.name)} (current)`
-                      : `View ${formatName(stage.name)}`
-                  }
-                  style={{
-                    padding: 'var(--mantine-spacing-xs)',
-                    borderRadius: 'var(--mantine-radius-md)',
-                    border: '1px solid var(--mantine-color-default-border)',
-                    background: isCurrent
-                      ? 'var(--mantine-color-pokeRed-light)'
-                      : 'var(--mantine-color-body)',
-                    cursor: isCurrent ? 'default' : 'pointer',
-                  }}
+                  aria-label={isCurrent ? `${name} (current)` : `View ${name}`}
                 >
-                  <Stack align="center" gap={4}>
-                    <div className="artCircle" style={{ width: 72, height: 72 }}>
-                      <img
-                        className="spriteImg"
-                        src={artworkUrl(stage.id)}
-                        alt=""
-                        loading="lazy"
-                        width="54"
-                        height="54"
-                      />
-                    </div>
-                    <Text size="xs" fw={700} c={isCurrent ? undefined : 'dimmed'}>
-                      {formatName(stage.name)}
-                    </Text>
-                  </Stack>
-                </UnstyledButton>
+                  <span className="dish">
+                    <img className="sprite" src={thumbUrl(id)} alt="" width="256" height="256" loading="lazy" />
+                  </span>
+                  <span className="evolution-name">{name}</span>
+                </button>
               );
             })}
-          </Group>
+          </div>
         </Fragment>
       ))}
-    </Group>
+    </div>
   );
 }

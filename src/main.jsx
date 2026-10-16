@@ -1,15 +1,19 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css';
+import { StrictMode } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import App from './App.jsx';
-import { theme } from './theme.js';
+import { syncColorSchemeAcrossTabs } from './colorScheme.js';
 import './index.css';
 
-createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="auto">
-      <App />
-    </MantineProvider>
-  </React.StrictMode>
+const container = document.getElementById('root');
+const app = (
+  <StrictMode>
+    <App />
+  </StrictMode>
 );
+
+// Production builds prerender the initial view into index.html (see
+// vite.config.js), so hydrate it; the dev server serves an empty root.
+if (container.firstElementChild) hydrateRoot(container, app);
+else createRoot(container).render(app);
+
+syncColorSchemeAcrossTabs();
