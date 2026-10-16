@@ -1,16 +1,14 @@
 import { createRef } from 'react';
-import { MantineProvider } from '@mantine/core';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { theme } from '../theme.js';
-import { renderWithProviders } from '../test/render.jsx';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Header from './Header.jsx';
 
 function setup(props = {}) {
   const searchRef = createRef();
   const onSearchChange = vi.fn();
   const onToggleFavorites = vi.fn();
-  const utils = renderWithProviders(
+  const element = (overrides) => (
     <Header
       search=""
       onSearchChange={onSearchChange}
@@ -19,41 +17,41 @@ function setup(props = {}) {
       onToggleFavorites={onToggleFavorites}
       favoriteCount={0}
       {...props}
+      {...overrides}
     />
   );
-  return { ...utils, onSearchChange, onToggleFavorites, searchRef };
+  const utils = render(element());
+  return { ...utils, rerenderWith: (overrides) => utils.rerender(element(overrides)), onSearchChange, onToggleFavorites, searchRef };
 }
+
+beforeEach(() => {
+  localStorage.clear();
+  document.querySelector('meta[name="color-scheme"]').content = 'light dark';
+});
 
 describe('Header', () => {
   it('renders the title and search input', () => {
-    const { getByLabelText, getByText } = setup();
-    expect(getByText('Dev')).toBeInTheDocument();
+    const { getByLabelText, getByRole } = setup();
+    expect(getByRole('heading', { level: 1 })).toHaveTextContent('PokéDev');
     expect(getByLabelText('Search Pokémon by name or number')).toBeInTheDocument();
+  });
+
+  it('forwards the search ref to the input', () => {
+    const { searchRef } = setup();
+    expect(searchRef.current).toBe(document.querySelector('input'));
   });
 
   it('calls onSearchChange as the user types', async () => {
     const { getByLabelText, onSearchChange } = setup();
     await userEvent.type(getByLabelText('Search Pokémon by name or number'), 'pika');
-    expect(onSearchChange).toHaveBeenCalled();
     expect(onSearchChange.mock.calls.map((c) => c[0]).join('')).toBe('pika');
   });
 
   it('shows a clear button only when there is search text, and clears on click', async () => {
-    const { queryByLabelText, rerender, getByLabelText, onSearchChange } = setup();
+    const { queryByLabelText, getByLabelText, rerenderWith, onSearchChange } = setup();
     expect(queryByLabelText('Clear search')).not.toBeInTheDocument();
 
-    rerender(
-      <MantineProvider theme={theme}>
-        <Header
-          search="pika"
-          onSearchChange={onSearchChange}
-          searchRef={createRef()}
-          showFavorites={false}
-          onToggleFavorites={() => {}}
-          favoriteCount={0}
-        />
-      </MantineProvider>
-    );
+    rerenderWith({ search: 'pika' });
     await userEvent.click(getByLabelText('Clear search'));
     expect(onSearchChange).toHaveBeenCalledWith('');
   });
@@ -64,21 +62,22 @@ describe('Header', () => {
     expect(onToggleFavorites).toHaveBeenCalled();
   });
 
-  it('shows the favorites count indicator when there are favorites', () => {
-    const { getByText } = setup({ favoriteCount: 3 });
+  it('shows the favorites count indicator only when there are favorites', () => {
+    const { getByText, queryByText, rerenderWith } = setup({ favoriteCount: 3 });
     expect(getByText('3')).toBeInTheDocument();
+    rerenderWith({ favoriteCount: 0 });
+    expect(queryByText('0')).not.toBeInTheDocument();
   });
 
-  it('shows "Show all Pokémon" title when favorites filter is active', () => {
+  it('marks the favorites filter as pressed and retitles it when active', () => {
     const { getByTitle } = setup({ showFavorites: true });
-    expect(getByTitle('Show all Pokémon')).toBeInTheDocument();
+    expect(getByTitle('Show all Pokémon')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('toggles the color scheme when the theme button is clicked', async () => {
     const { getByLabelText } = setup();
-    const toggle = getByLabelText('Toggle color scheme');
-    await userEvent.click(toggle);
-    // Toggling should not throw and the button remains present/interactive.
-    expect(toggle).toBeInTheDocument();
+    await userEvent.click(getByLabelText('Toggle color scheme'));
+    // The system scheme is light in jsdom, so the toggle switches to dark.
+    expect(document.querySelector('meta[name="color-scheme"]').content).toBe('dark');
   });
 });

@@ -1,239 +1,220 @@
-import { MantineProvider } from '@mantine/core';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { theme } from '../theme.js';
-import { renderWithProviders, waitFor } from '../test/render.jsx';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DetailModal from './DetailModal.jsx';
 
-vi.mock('../api.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    fetchSpecies: vi.fn(),
-    fetchEvolutionChain: vi.fn(),
-  };
-});
+vi.mock('../data.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  fetchDetails: vi.fn(),
+  prefetchDetails: vi.fn(),
+}));
 
-import { fetchEvolutionChain, fetchSpecies } from '../api.js';
+import { fetchDetails } from '../data.js';
 
-const pokemon = {
-  id: 6,
-  name: 'charizard',
-  species: { url: 'https://pokeapi.co/api/v2/pokemon-species/6/' },
-  sprites: { other: { 'official-artwork': { front_default: 'art.png', front_shiny: 'shiny.png' } } },
-  types: [{ type: { name: 'fire' } }, { type: { name: 'flying' } }],
-  abilities: [
-    { ability: { name: 'blaze' }, slot: 1, is_hidden: false },
-    { ability: { name: 'solar-power' }, slot: 3, is_hidden: true },
-  ],
-  stats: [
-    { stat: { name: 'hp' }, base_stat: 78 },
-    { stat: { name: 'attack' }, base_stat: 84 },
-  ],
+const charizard = {
   height: 17,
   weight: 905,
-  base_experience: 267,
-};
-
-const species = {
-  flavor_text_entries: [
-    { language: { name: 'en' }, flavor_text: 'Old entry.' },
-    { language: { name: 'en' }, flavor_text: 'Spits fire\nthat is hot.' },
-    { language: { name: 'fr' }, flavor_text: 'Non applicable' },
+  baseExp: 267,
+  stats: [78, 84, 78, 109, 85, 100],
+  abilities: [
+    { name: 'blaze', hidden: false },
+    { name: 'solar-power', hidden: true },
   ],
-  genera: [{ language: { name: 'en' }, genus: 'Flame Pokémon' }],
-  evolution_chain: { url: 'https://pokeapi.co/api/v2/evolution-chain/2/' },
+  genus: 'Flame Pokémon',
+  flavor: 'Spits fire that is hot.',
+  evolution: [[4], [5], [6]],
 };
 
-const evolutionChain = {
-  chain: {
-    species: { name: 'charmander', url: 'https://pokeapi.co/api/v2/pokemon-species/4/' },
-    evolves_to: [
-      {
-        species: { name: 'charmeleon', url: 'https://pokeapi.co/api/v2/pokemon-species/5/' },
-        evolves_to: [
-          {
-            species: { name: 'charizard', url: 'https://pokeapi.co/api/v2/pokemon-species/6/' },
-            evolves_to: [],
-          },
-        ],
-      },
-    ],
-  },
-};
+const never = () => new Promise(() => {});
 
 beforeEach(() => {
-  fetchSpecies.mockReset();
-  fetchEvolutionChain.mockReset();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
+  fetchDetails.mockReset();
 });
 
 function setup(props = {}) {
   const onClose = vi.fn();
   const onToggleFavorite = vi.fn();
   const onNavigate = vi.fn();
-  const utils = renderWithProviders(
+  const element = (overrides) => (
     <DetailModal
-      pokemon={pokemon}
+      id={6}
       isFavorite={false}
       onToggleFavorite={onToggleFavorite}
       onClose={onClose}
       onNavigate={onNavigate}
       {...props}
+      {...overrides}
     />
   );
-  return { ...utils, onClose, onToggleFavorite, onNavigate };
+  const utils = render(element());
+  const dialog = utils.getByRole('dialog', { hidden: true });
+  return { ...utils, dialog, rerenderWith: (o) => utils.rerender(element(o)), onClose, onToggleFavorite, onNavigate };
 }
 
+const heroImages = (dialog) => [...dialog.querySelectorAll('.art-hero img')];
+
 describe('DetailModal', () => {
-  it('shows loading placeholders before species/evolution data resolves', () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const { getByText } = setup();
-    expect(getByText('Loading Pokédex entry…')).toBeInTheDocument();
-    expect(getByText('Loading evolution chain…')).toBeInTheDocument();
+  it('opens as a modal dialog labelled with the Pokémon name', () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog } = setup();
+    expect(dialog).toHaveAttribute('open');
+    expect(dialog).toHaveAttribute('aria-label', 'Charizard details');
+    expect(dialog).toHaveAttribute('closedby', 'any');
   });
 
-  it('renders name, dex number, stats, abilities, and flavor text once loaded', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { getByText } = setup();
-
+  it('shows what the index already knows right away, with placeholders for the rest', () => {
+    fetchDetails.mockImplementation(never);
+    const { getByText, getAllByText } = setup();
     expect(getByText('#0006')).toBeInTheDocument();
     expect(getByText('Charizard')).toBeInTheDocument();
+    expect(getByText('Fire')).toBeInTheDocument();
+    expect(getByText('Flying')).toBeInTheDocument();
+    expect(getByText('Loading Pokédex entry…')).toBeInTheDocument();
+    expect(getByText('Loading evolution chain…')).toBeInTheDocument();
+    expect(getAllByText('…')).toHaveLength(3);
+  });
 
-    await waitFor(() => expect(getByText('Flame Pokémon')).toBeInTheDocument());
+  it('renders genus, facts, abilities, stats and flavor text once loaded', async () => {
+    fetchDetails.mockResolvedValue(charizard);
+    const { getByText, findByText } = setup();
+
+    await findByText('Flame Pokémon');
+    expect(fetchDetails).toHaveBeenCalledWith(6);
     expect(getByText('Spits fire that is hot.')).toBeInTheDocument();
     expect(getByText('Blaze')).toBeInTheDocument();
+    expect(getByText('Solar Power')).toBeInTheDocument();
     expect(getByText('· hidden')).toBeInTheDocument();
-    expect(getByText('162')).toBeInTheDocument(); // stat total 78 + 84
+    expect(getByText('109')).toBeInTheDocument();
+    expect(getByText('534')).toBeInTheDocument(); // stat total
     expect(getByText('1.7 m')).toBeInTheDocument();
     expect(getByText('90.5 kg')).toBeInTheDocument();
     expect(getByText('267')).toBeInTheDocument();
   });
 
-  it('shows a fallback message when there is no English flavor text', async () => {
-    fetchSpecies.mockResolvedValue({ ...species, flavor_text_entries: [] });
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { getByText } = setup();
-    await waitFor(() => expect(getByText('No Pokédex entry available.')).toBeInTheDocument());
-  });
-
-  it('shows "no evolution data" when species has no evolution_chain url', async () => {
-    fetchSpecies.mockResolvedValue({ ...species, evolution_chain: undefined });
-    const { getByText } = setup();
-    await waitFor(() => expect(getByText('No evolution data available.')).toBeInTheDocument());
-    expect(fetchEvolutionChain).not.toHaveBeenCalled();
-  });
-
-  it('shows "no evolution data" when fetchSpecies rejects', async () => {
-    fetchSpecies.mockRejectedValue(new Error('boom'));
-    const { getByText } = setup();
-    await waitFor(() => expect(getByText('No evolution data available.')).toBeInTheDocument());
-  });
-
-  it('shows "no evolution data" when fetchEvolutionChain rejects after species resolves', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockRejectedValue(new Error('boom'));
-    const { getByText } = setup();
-    await waitFor(() => expect(getByText('No evolution data available.')).toBeInTheDocument());
-  });
-
-  it('renders the evolution chain once loaded and forwards navigation', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { getByText, getByRole, onNavigate } = setup();
-    await waitFor(() => expect(getByText('Charmander')).toBeInTheDocument());
-    await userEvent.click(getByRole('button', { name: 'View Charmeleon' }));
-    expect(onNavigate).toHaveBeenCalledWith(5);
-  });
-
-  it('shows Base XP as an em dash when base_experience is missing', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { getByText } = setup({
-      pokemon: { ...pokemon, base_experience: undefined },
-    });
-    await waitFor(() => expect(getByText('Flame Pokémon')).toBeInTheDocument());
+  it('shows fallbacks for a missing Pokédex entry and base XP', async () => {
+    fetchDetails.mockResolvedValue({ ...charizard, flavor: null, baseExp: null });
+    const { findByText, getByText } = setup();
+    await findByText('No Pokédex entry available.');
     expect(getByText('—')).toBeInTheDocument();
   });
 
-  it('toggles shiny artwork and reverts on image error', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { getByLabelText, getByAltText } = setup();
+  it('shows an error with a retry when details fail to load', async () => {
+    fetchDetails.mockRejectedValueOnce(new Error('offline'));
+    fetchDetails.mockResolvedValueOnce(charizard);
+    const { findByText, getByText, getByRole } = setup();
+
+    await findByText(/Couldn.t load details/);
+    expect(getByText('No evolution data available.')).toBeInTheDocument();
+
+    await userEvent.click(getByRole('button', { name: 'Retry', hidden: true }));
+    await findByText('Spits fire that is hot.');
+    expect(fetchDetails).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders the evolution chain once loaded and forwards navigation', async () => {
+    fetchDetails.mockResolvedValue(charizard);
+    const { findByRole, onNavigate } = setup();
+    await userEvent.click(await findByRole('button', { name: 'View Charmeleon', hidden: true }));
+    expect(onNavigate).toHaveBeenCalledWith(5);
+  });
+
+  it('says when a Pokémon does not evolve', async () => {
+    fetchDetails.mockResolvedValue({ ...charizard, evolution: [[6]] });
+    const { findByText } = setup();
+    await findByText('This Pokémon does not evolve.');
+  });
+
+  it('shows the thumbnail until the full-size artwork has loaded', () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog } = setup();
+    const [placeholder, full] = heroImages(dialog);
+    expect(placeholder).toHaveAttribute('src', '/art/6.avif');
+    expect(full).toHaveAttribute('src', expect.stringContaining('/official-artwork/6.png'));
+    expect(full).toHaveAttribute('alt', 'Charizard');
+    expect(full).not.toBeVisible();
+
+    fireEvent.load(full);
+    expect(heroImages(dialog)).toHaveLength(1);
+    expect(heroImages(dialog)[0]).toBeVisible();
+  });
+
+  it('toggles shiny artwork, keeping the regular art up until it loads', async () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog, getByLabelText } = setup();
+    fireEvent.load(heroImages(dialog)[1]);
+
     const toggle = getByLabelText('Toggle shiny artwork');
     await userEvent.click(toggle);
-    const img = getByAltText('Charizard');
-    expect(img).toHaveAttribute('src', 'shiny.png');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    const [placeholder, shiny] = heroImages(dialog);
+    expect(placeholder).toHaveAttribute('src', expect.stringContaining('/official-artwork/6.png'));
+    expect(shiny).toHaveAttribute('src', expect.stringContaining('/official-artwork/shiny/6.png'));
 
-    img.dispatchEvent(new Event('error', { bubbles: true }));
-    await waitFor(() => expect(getByAltText('Charizard')).toHaveAttribute('src', 'art.png'));
+    fireEvent.load(shiny);
+    expect(heroImages(dialog)).toHaveLength(1);
   });
 
-  it('falls back to constants artwork URLs when no sprite artwork is present', () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const bare = { ...pokemon, sprites: {} };
-    const { getByAltText } = setup({ pokemon: bare });
-    expect(getByAltText('Charizard')).toHaveAttribute(
-      'src',
-      expect.stringContaining('/6.png')
-    );
+  it('reverts to regular artwork when the shiny artwork fails to load', async () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog, getByLabelText } = setup();
+    const toggle = getByLabelText('Toggle shiny artwork');
+    await userEvent.click(toggle);
+    fireEvent.error(heroImages(dialog).at(-1));
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(heroImages(dialog).at(-1)).toHaveAttribute('src', expect.stringContaining('/official-artwork/6.png'));
   });
 
-  it('falls back to the constants shiny artwork URL when no shiny sprite is present', async () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const bare = { ...pokemon, sprites: {} };
-    const { getByLabelText, getByAltText } = setup({ pokemon: bare });
+  it('resets loading state and shiny when navigating to another Pokémon', async () => {
+    fetchDetails.mockResolvedValueOnce(charizard).mockImplementation(never);
+    const { findByText, getByText, getByLabelText, rerenderWith, dialog } = setup();
+    await findByText('Flame Pokémon');
     await userEvent.click(getByLabelText('Toggle shiny artwork'));
-    expect(getByAltText('Charizard')).toHaveAttribute(
-      'src',
-      expect.stringContaining('/shiny/6.png')
-    );
+
+    rerenderWith({ id: 7 });
+    expect(dialog).toHaveAttribute('aria-label', 'Squirtle details');
+    expect(getByText('Loading Pokédex entry…')).toBeInTheDocument();
+    expect(getByLabelText('Toggle shiny artwork')).toHaveAttribute('aria-pressed', 'false');
+    expect(fetchDetails).toHaveBeenLastCalledWith(7);
   });
 
-  it('calls onToggleFavorite with the pokemon id and reflects favorite state', async () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const { getByLabelText, onToggleFavorite, rerender } = setup({ isFavorite: false });
+  it('calls onToggleFavorite with the id and reflects favorite state', async () => {
+    fetchDetails.mockImplementation(never);
+    const { getByLabelText, onToggleFavorite, rerenderWith } = setup();
     await userEvent.click(getByLabelText('Add to favorites'));
     expect(onToggleFavorite).toHaveBeenCalledWith(6);
+    rerenderWith({ isFavorite: true });
+    expect(getByLabelText('Remove from favorites')).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('shows "Remove from favorites" label when already a favorite', () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const { getByLabelText } = setup({ isFavorite: true });
-    expect(getByLabelText('Remove from favorites')).toBeInTheDocument();
-  });
-
-  it('calls onClose when the close button is clicked', async () => {
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    const { getByLabelText, onClose } = setup();
+  it('closes via the close button', async () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog, getByLabelText, onClose } = setup();
     await userEvent.click(getByLabelText('Close details'));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(dialog).not.toHaveAttribute('open');
   });
 
-  it('re-fetches species/chain and resets state when the pokemon prop changes', async () => {
-    fetchSpecies.mockResolvedValue(species);
-    fetchEvolutionChain.mockResolvedValue(evolutionChain);
-    const { rerender, getByText } = setup();
-    await waitFor(() => expect(getByText('Flame Pokémon')).toBeInTheDocument());
+  it('routes close requests (Esc, light dismiss) through the animated close', async () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog, onClose } = setup();
+    const cancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(cancel);
+    expect(cancel.defaultPrevented).toBe(true);
+    expect(dialog).toHaveAttribute('data-closing');
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
 
-    fetchSpecies.mockClear();
-    fetchSpecies.mockReturnValue(new Promise(() => {}));
-    rerender(
-      <MantineProvider theme={theme}>
-        <DetailModal
-          pokemon={{ ...pokemon, id: 7, name: 'squirtle' }}
-          isFavorite={false}
-          onToggleFavorite={() => {}}
-          onClose={() => {}}
-          onNavigate={() => {}}
-        />
-      </MantineProvider>
-    );
-    expect(getByText('Loading Pokédex entry…')).toBeInTheDocument();
-    expect(fetchSpecies).toHaveBeenCalled();
+  it('closes on a backdrop click where closedby is unsupported, but not on clicks inside', async () => {
+    fetchDetails.mockImplementation(never);
+    const { dialog, getByText, onClose } = setup();
+    vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({ left: 100, right: 500, top: 100, bottom: 500 });
+
+    fireEvent.click(getByText('Charizard'), { clientX: 300, clientY: 300 });
+    fireEvent.click(dialog, { clientX: 300, clientY: 300 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.click(dialog, { clientX: 20, clientY: 20 });
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 });

@@ -1,13 +1,116 @@
-/* Global app styles. Mantine provides the reset, tokens, and component
-   styling; only app-specific flourishes live here. */
+/* PokéDev styles: design tokens, layout and components.
+   Colors are light-dark() pairs; which side applies is decided by the
+   <meta name="color-scheme"> tag (system preference unless overridden, see
+   src/colorScheme.js), mapped onto the `color-scheme` property below. */
+
+/* ---------- fonts ---------- */
+
+/* Self-hosted Nunito: variable weight, latin subset, preloaded in index.html. */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/nunito-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Local fonts tuned to Nunito's metrics (widths measured on this UI's text),
+   used until it loads so the swap doesn't reflow the page. */
+@font-face {
+  font-family: 'Nunito Fallback';
+  font-weight: 400;
+  src: local('Arial');
+  size-adjust: 99.84%;
+  ascent-override: 101.16%;
+  descent-override: 35.06%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Nunito Fallback';
+  font-weight: 500 900;
+  src: local('Arial Bold');
+  size-adjust: 100.62%;
+  ascent-override: 100.38%;
+  descent-override: 34.78%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Nunito Fallback Roboto';
+  font-weight: 400;
+  src: local('Roboto');
+  size-adjust: 101.25%;
+  ascent-override: 99.76%;
+  descent-override: 34.57%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Nunito Fallback Roboto';
+  font-weight: 500 900;
+  src: local('Roboto Bold');
+  size-adjust: 107.18%;
+  ascent-override: 94.24%;
+  descent-override: 32.66%;
+  line-gap-override: 0%;
+}
+
+/* ---------- tokens ---------- */
 
 :root {
-  /* Spring/bounce timing curves (linear() approximations) — see
-     https://developer.mozilla.org/docs/Web/CSS/easing-function/linear.
-     Fall back to a standard overshoot cubic-bezier where linear() is
-     unsupported (Safari < 17.2, pre-2023 Firefox/Chrome). */
+  color-scheme: light dark;
+
+  &:has(> head > meta[name='color-scheme'][content='light']) {
+    color-scheme: light;
+  }
+  &:has(> head > meta[name='color-scheme'][content='dark']) {
+    color-scheme: dark;
+  }
+
+  --font-sans: 'Nunito', 'Nunito Fallback', 'Nunito Fallback Roboto', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  --c-body: light-dark(#fff, #242424);
+  --c-text: light-dark(#000, #c9c9c9);
+  --c-bright: light-dark(#000, #fff);
+  --c-dimmed: light-dark(#868e96, #828282);
+  --c-placeholder: light-dark(#adb5bd, #696969);
+  --c-surface: light-dark(#fff, #2e2e2e);
+  --c-surface-hover: light-dark(#f8f9fa, #3b3b3b);
+  --c-border: light-dark(#ced4da, #424242);
+  --c-card-border: light-dark(#dee2e6, #424242);
+  --c-chip: light-dark(#f1f3f5, #3b3b3b);
+  --c-chip-hover: light-dark(#e9ecef, #424242);
+  --c-subtle: light-dark(#212529, #f8f9fa);
+  --c-subtle-hover: light-dark(#e9ecef, #171a1d);
+  --c-track: light-dark(#e9ecef, #424242);
+  --c-dish-center: light-dark(#f8f9fa, #3b3b3b);
+  --c-dish-edge: light-dark(#e9ecef, #242424);
+  --c-tooltip: light-dark(#212529, #e9ecef);
+  --c-tooltip-text: light-dark(#fff, #000);
+
+  --c-primary: light-dark(#f0191c, #f02a2b);
+  --c-primary-hover: light-dark(#d60b11, #f0191c);
+  --c-primary-light: light-dark(#ffd1d1, #540002);
+  --c-primary-light-hover: light-dark(#fbbaba, #650003);
+  --c-primary-light-text: light-dark(#a70003, #ffe9e9);
+  --c-yellow: light-dark(#fab005, #fcc419);
+  --c-yellow-hover: light-dark(#f59f00, #fab005);
+
+  --c-stat-teal: light-dark(#12b886, #20c997);
+  --c-stat-green: light-dark(#40c057, #51cf66);
+  --c-stat-yellow: light-dark(#fab005, #fcc419);
+  --c-stat-red: light-dark(#fa5252, #ff6b6b);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 32px;
+
+  /* Spring/bounce timing curves (linear() approximations), falling back to an
+     overshoot cubic-bezier where linear() is unsupported. */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @supports (transition-timing-function: linear(0, 1)) {
@@ -21,12 +124,19 @@
       1.045 42.4%, 1.069 44.5%, 1.059 46.3%, 0.979 50.9%, 0.96 53.4%, 0.966 55.3%,
       1.013 59.9%, 1.024 62.3%, 0.986 71.2%, 1.008 79.9%, 0.995 88.9%, 1
     );
-    --ease-bounce: linear(
-      0, 0.214 14.7%, 0.386 23.7%, 0.598 31.9%, 0.999 44.7%, 0.807 52.6%,
-      0.762 56%, 0.747 59.4%, 0.758 62.4%, 0.793 65.6%, 0.999 77.4%, 0.961 81.2%,
-      0.949 84.8%, 0.956 88%, 0.993 95.5%, 1
-    );
   }
+}
+
+/* ---------- base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -35,119 +145,1034 @@
   }
 }
 
+body {
+  margin: 0;
+  background: var(--c-body);
+  color: var(--c-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
 img {
   max-width: 100%;
 }
 
-/* ---------- Pokémon artwork "dish" ---------- */
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
 
-.artCircle {
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.muted {
+  color: var(--c-dimmed);
+  font-size: 14px;
+}
+
+/* Theme-dependent visibility, e.g. the sun/moon toggle icons. */
+.if-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name='color-scheme'][content='light'])) {
+    & .if-dark {
+      display: inline;
+    }
+    & .if-light {
+      display: none;
+    }
+  }
+}
+
+:root:has(> head > meta[name='color-scheme'][content='dark']) {
+  & .if-dark {
+    display: inline;
+  }
+  & .if-light {
+    display: none;
+  }
+}
+
+/* ---------- layout ---------- */
+
+.container {
+  max-width: 1140px;
+  margin-inline: auto;
+  padding: 32px 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (min-width: 36em) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48em) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 62em) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.results {
+  margin-bottom: 16px;
+  color: var(--c-dimmed);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.loading-more,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-dimmed);
+  font-weight: 700;
+}
+
+.loading-more {
+  gap: 12px;
+  padding-block: 32px;
+}
+
+.empty {
+  flex-direction: column;
+  gap: 20px;
+  padding-block: 64px;
+  text-align: center;
+}
+
+.footer {
+  margin-top: 56px;
+  color: var(--c-dimmed);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+
+  & a {
+    color: inherit;
+  }
+}
+
+/* ---------- buttons ---------- */
+
+.button,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  scale: 1;
+  transition:
+    scale 0.5s var(--ease-spring),
+    background-color 0.1s ease;
+
+  &:active {
+    scale: 0.88;
+  }
+}
+
+.button {
+  height: 36px;
+  padding-inline: 18px;
+  border-color: var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-bright);
+  font-size: 14px;
+  font-weight: 600;
+
+  &:active {
+    scale: 0.96;
+  }
+}
+
+.icon-button {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--c-subtle);
+
+  &.lg {
+    width: 34px;
+    height: 34px;
+  }
+
+  &[data-variant='default'] {
+    border-color: var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-bright);
+  }
+
+  &[data-variant='light'] {
+    background: var(--c-primary-light);
+    color: var(--c-primary-light-text);
+  }
+
+  &[data-variant='filled'] {
+    background: var(--fill, var(--c-primary));
+    color: #fff;
+  }
+
+  &[data-color='yellow'] {
+    --fill: var(--c-yellow);
+    --fill-hover: var(--c-yellow-hover);
+  }
+}
+
+@media (hover: hover) {
+  .button:hover,
+  .icon-button[data-variant='default']:hover {
+    background: var(--c-surface-hover);
+  }
+
+  .icon-button[data-variant='subtle']:hover {
+    background: var(--c-subtle-hover);
+  }
+
+  .icon-button[data-variant='light']:hover {
+    background: var(--c-primary-light-hover);
+  }
+
+  .icon-button[data-variant='filled']:hover {
+    background: var(--fill-hover, var(--c-primary-hover));
+  }
+}
+
+/* A tooltip from data-tooltip, shown below so a scrolling container can't clip it. */
+[data-tooltip] {
+  position: relative;
+
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 2;
+    translate: -50% 0;
+    padding: 5px 10px;
+    border-radius: var(--radius-md);
+    background: var(--c-tooltip);
+    color: var(--c-tooltip-text);
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &:is(:hover, :focus-visible)::after {
+    opacity: 1;
+  }
+}
+
+/* ---------- header ---------- */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--c-text);
+
+  & span {
+    color: var(--c-primary);
+  }
+}
+
+.eyebrow {
+  color: var(--c-dimmed);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.search {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 520px;
+}
+
+.search-input {
+  display: block;
+  width: 100%;
+  height: 42px;
+  padding: 0 40px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: 16px;
+  appearance: none;
+  transition: border-color 0.1s ease;
+
+  &::placeholder {
+    color: var(--c-placeholder);
+  }
+
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--c-primary);
+  }
+}
+
+.search-icon,
+.search-clear {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.search-icon {
+  left: 12px;
+  color: var(--c-dimmed);
+  pointer-events: none;
+}
+
+.search-clear {
+  right: 7px;
+
+  &:active {
+    scale: 0.88;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.indicator-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  translate: 50% -50%;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 5px;
+  border-radius: 1000px;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ---------- type filter chips ---------- */
+
+.type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  --chip-bg: color-mix(in srgb, var(--chip-color) 10%, transparent);
+  --chip-bg-hover: color-mix(in srgb, var(--chip-color) 14%, transparent);
+
+  &.all {
+    --chip-color: var(--c-primary-light-text);
+    --chip-bg: var(--c-primary-light);
+    --chip-bg-hover: var(--c-primary-light-hover);
+  }
+}
+
+.chip-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chip-label {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding-inline: 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  background: var(--c-chip);
+  color: var(--c-text);
+  font-size: 14px;
+  line-height: 26px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chip-input:checked + .chip-label {
+  padding-inline: 10px;
+  background: var(--chip-bg);
+  color: var(--chip-color);
+}
+
+.chip-input:focus-visible + .chip-label {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.chip-check {
+  display: inline-flex;
+  width: 20px;
+}
+
+@media (hover: hover) {
+  .chip-label:hover {
+    background: var(--c-chip-hover);
+  }
+
+  .chip-input:checked + .chip-label:hover {
+    background: var(--chip-bg-hover);
+  }
+}
+
+/* ---------- type badges ---------- */
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding-inline: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.25px;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &.md {
+    height: 20px;
+    padding-inline: 10px;
+    font-size: 11px;
+    line-height: 18px;
+  }
+}
+
+/* ---------- artwork "dish" ---------- */
+
+.dish {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 50% 38%,
-    light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5)),
-    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-7))
-  );
-  /* Parallax layer: floats opposite the card's tilt so the artwork reads
-     as sitting above the card's surface. Set to 0 by useTilt on pointer
-     leave, and never set at all on touch/reduced-motion (stays put). */
+  background: radial-gradient(circle at 50% 38%, var(--c-dish-center), var(--c-dish-edge));
+  /* Parallax: floats opposite the tilt so the artwork reads as sitting above
+     the surface. Driven by useTilt; stays put on touch/reduced motion. */
   translate: var(--tilt-px, 0px) var(--tilt-py, 0px);
   transition: translate 0.5s var(--ease-spring);
 }
 
-.spriteImg {
+.sprite {
+  grid-area: 1 / 1;
   width: 78%;
   height: 78%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.22));
+  scale: 1;
   transition: scale 0.25s ease;
-  scale: 1;
 }
 
-[data-card]:hover .spriteImg {
-  scale: 1.08;
-}
+/* ---------- pointer-tilt surfaces (cards, detail artwork) ---------- */
 
-/* ---------- 3D pointer-tilt card ---------- */
-
-[data-card] {
+.tilt {
   position: relative;
-  /* Identity transforms up front so hover/press never trigger a surprise
-     stacking-context change (see individual-transform-properties guidance). */
   scale: 1;
-  transform: perspective(900px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
-  transform-style: preserve-3d;
   transition: scale 0.5s var(--ease-spring);
-}
 
-[data-card]:active {
-  scale: 0.97;
+  &:active {
+    scale: 0.97;
+  }
+
+  &:hover .sprite {
+    scale: 1.08;
+  }
 }
 
 @media (hover: hover) {
-  [data-card] {
-    transition: scale 0.5s var(--ease-spring), box-shadow 0.3s ease, transform 0.5s var(--ease-spring);
-    box-shadow: 0 var(--tilt-shadow-y, 4px) var(--tilt-shadow-blur, 10px) rgba(0, 0, 0, var(--tilt-shadow-o, 0.08));
+  .tilt {
+    box-shadow: 0 var(--tilt-shadow-y, 4px) var(--tilt-shadow-blur, 10px) rgb(0 0 0 / var(--tilt-shadow-o, 0.08));
+    transition:
+      scale 0.5s var(--ease-spring),
+      box-shadow 0.3s ease,
+      transform 0.5s var(--ease-spring);
+
+    /* Only hovered surfaces get the 3D transform, so the grid isn't one
+       compositor layer per card. useTilt clears the transition while the
+       pointer moves so rotation tracks it 1:1, and restores it on leave. */
+    &:hover {
+      --tilt-shadow-y: 18px;
+      --tilt-shadow-blur: 32px;
+      --tilt-shadow-o: 0.22;
+      transform: perspective(900px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+    }
+
+    /* Glare sheen that follows the pointer. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      opacity: var(--glare-o, 0);
+      transition: opacity 0.4s ease;
+      background: radial-gradient(
+        circle at var(--glare-x, 50%) var(--glare-y, 50%),
+        light-dark(rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.14)),
+        transparent 45%
+      );
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tilt {
+    /* translate/scale (not transform) so this never fights the tilt. */
+    animation: rise-in 0.45s var(--ease-spring) both;
   }
 
-  [data-card]:hover {
-    --tilt-shadow-y: 18px;
-    --tilt-shadow-blur: 32px;
-    --tilt-shadow-o: 0.22;
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      translate: 0 14px;
+      scale: 0.94;
+    }
+  }
+}
+
+/* ---------- Pokémon cards ---------- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--c-card-border);
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+  color: var(--c-text);
+
+  /* The name button's overlay makes the whole card clickable, so the ring
+     goes on the card. */
+  &:has(.card-name:focus-visible) {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 2px;
   }
 
-  /* While the pointer is actively moving, useTilt clears the transition
-     inline so rotation tracks the cursor without lag; it restores on leave. */
+  & .dish {
+    width: 132px;
+    height: 132px;
+    margin-inline: auto;
+  }
+}
 
-  /* Glare sheen that follows the pointer, for a tactile "glossy card" feel. */
-  [data-card]::after {
+/* Cards beyond the first page skip layout and paint until scrolled near. */
+.card.deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 280px;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.card-id {
+  color: var(--c-dimmed);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+}
+
+/* Sits above the name button's overlay. */
+.card-heart {
+  position: relative;
+  z-index: 1;
+}
+
+.card-name {
+  margin: 12px 0 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.55;
+  text-align: center;
+
+  &::after {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: var(--glare-o, 0);
-    transition: opacity 0.4s ease;
-    background: radial-gradient(
-      circle at var(--glare-x, 50%) var(--glare-y, 50%),
-      light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.14)),
-      transparent 45%
-    );
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+/* ---------- detail dialog ---------- */
+
+.modal {
+  width: 780px;
+  max-width: 90vw;
+  max-height: 90dvh;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--c-body);
+  color: var(--c-text);
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.05),
+    0 36px 28px -7px rgb(0 0 0 / 0.05),
+    0 17px 17px -7px rgb(0 0 0 / 0.04);
+  overscroll-behavior: contain;
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.3s ease,
+    scale 0.3s var(--ease-spring);
+
+  &[open] {
+    @starting-style {
+      opacity: 0;
+      scale: 0.85;
+    }
+  }
+
+  /* Exit: see closeWithTransition() in DetailModal.jsx. */
+  &[data-closing] {
+    opacity: 0;
+    scale: 0.85;
+    transition-timing-function: ease;
+  }
+
+  &::backdrop {
+    background: rgb(0 0 0 / 0.55);
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+    overscroll-behavior: contain;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  &[open]::backdrop {
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  &[data-closing]::backdrop {
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-card],
-  [data-card]::after,
-  .artCircle,
-  .spriteImg {
-    transition: none !important;
+  .modal {
+    transition-duration: 0.1s;
+
+    &[open] {
+      @starting-style {
+        scale: 1;
+      }
+    }
+
+    &[data-closing] {
+      scale: 1;
+    }
   }
 }
 
-/* ---------- pressable utility (icon buttons, etc.) ---------- */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
 
-.pressable {
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.modal-number {
+  color: var(--c-dimmed);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.35;
+
+  @media (min-width: 48em) {
+    font-size: 30px;
+  }
+}
+
+.modal-genus {
+  color: var(--c-dimmed);
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+}
+
+.modal-grid {
+  display: grid;
+  gap: 24px 16px;
+  align-items: start;
+
+  @media (min-width: 48em) {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.modal-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.art-hero {
+  width: 260px;
+  max-width: 72vw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+
+  & .dish {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.flavor {
+  max-width: 340px;
+  color: var(--c-dimmed);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.fact {
+  padding: 12px;
+  border: 1px solid var(--c-card-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  text-align: center;
+}
+
+.fact-label {
+  color: var(--c-dimmed);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fact-value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.section-title {
+  margin-bottom: 12px;
+  color: var(--c-dimmed);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.abilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.ability {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding-inline: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-bright);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  white-space: nowrap;
+}
+
+.ability-hidden {
+  color: var(--c-dimmed);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: pre;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.stat-label {
+  flex: none;
+  width: 64px;
+  color: var(--c-dimmed);
+  font-weight: 700;
+}
+
+.stat-value {
+  flex: none;
+  width: 32px;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  text-align: right;
+}
+
+.stat-track {
+  flex: 1;
+  height: 12px;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--c-track);
+}
+
+.stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  background: var(--c-stat-red);
+  transition: width 0.6s ease;
+
+  &[data-band='teal'] {
+    background: var(--c-stat-teal);
+  }
+  &[data-band='green'] {
+    background: var(--c-stat-green);
+  }
+  &[data-band='yellow'] {
+    background: var(--c-stat-yellow);
+  }
+}
+
+.stat-total {
+  margin-top: 4px;
+
+  & .stat-label {
+    color: var(--c-text);
+    font-weight: 800;
+  }
+
+  & .stat-value {
+    color: var(--c-primary);
+  }
+}
+
+/* ---------- evolution chain ---------- */
+
+.evolution {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.evolution-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.evolution-arrow {
+  color: var(--c-dimmed);
+}
+
+.evolution-mon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-body);
   scale: 1;
   transition: scale 0.5s var(--ease-spring);
+
+  &:active {
+    scale: 0.88;
+  }
+
+  &:disabled {
+    background: var(--c-primary-light);
+    cursor: default;
+    scale: 1;
+  }
+
+  & .dish {
+    width: 72px;
+    height: 72px;
+  }
+
+  & .sprite {
+    width: 54px;
+    height: 54px;
+  }
 }
 
-.pressable:active {
-  scale: 0.88;
-}
+.evolution-name {
+  color: var(--c-dimmed);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
 
-@media (prefers-reduced-motion: reduce) {
-  .pressable {
-    transition: none;
+  :disabled > & {
+    color: var(--c-text);
   }
 }
 
 /* ---------- pokéball logo / spinner ---------- */
 
 .pokeball {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
+  flex: none;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.18));
 }
 
 .pokeball.spin {
@@ -160,26 +1185,21 @@ img {
   }
 }
 
+/* ---------- reduced motion ---------- */
+
 @media (prefers-reduced-motion: reduce) {
+  .tilt,
+  .tilt::after,
+  .dish,
+  .sprite,
+  .button,
+  .icon-button,
+  .evolution-mon,
+  .stat-fill {
+    transition: none !important;
+  }
+
   .pokeball.spin {
     animation: none;
-  }
-}
-
-/* ---------- card entrance ---------- */
-
-@media (prefers-reduced-motion: no-preference) {
-  [data-card] {
-    /* translate/scale (not transform) so this never collides with the
-       perspective/rotate tilt transform declared above. */
-    animation: cardIn 0.45s var(--ease-spring) both;
-  }
-
-  @keyframes cardIn {
-    from {
-      opacity: 0;
-      translate: 0 14px;
-      scale: 0.94;
-    }
   }
 }

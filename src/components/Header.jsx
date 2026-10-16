@@ -1,15 +1,5 @@
-import {
-  ActionIcon,
-  Box,
-  Group,
-  Indicator,
-  TextInput,
-  Text,
-  Title,
-  useComputedColorScheme,
-  useMantineColorScheme,
-} from '@mantine/core';
-import { IconHeart, IconHeartFilled, IconMoon, IconSearch, IconSun, IconX } from '@tabler/icons-react';
+import { toggleColorScheme } from '../colorScheme.js';
+import { CloseIcon, HeartIcon, MoonIcon, SearchIcon, SunIcon } from './Icons.jsx';
 import Pokeball from './Pokeball.jsx';
 
 export default function Header({
@@ -20,80 +10,71 @@ export default function Header({
   onToggleFavorites,
   favoriteCount,
 }) {
-  const { setColorScheme } = useMantineColorScheme();
-  const computed = useComputedColorScheme('light', { getInitialValueInEffect: true });
-  const toggleScheme = () => setColorScheme(computed === 'dark' ? 'light' : 'dark');
-
   return (
-    <Group justify="space-between" align="center" wrap="wrap" gap="md" mb="lg">
-      <Group gap="sm" wrap="nowrap">
+    <header className="header">
+      <div className="brand">
         <Pokeball size={42} />
-        <Box>
-          <Title order={1} fz={26} lh={1.1}>
-            Poké
-            <Text span inherit c="pokeRed">
-              Dev
-            </Text>
-          </Title>
-          <Text size="xs" c="dimmed" fw={700} tt="uppercase" style={{ letterSpacing: '0.12em' }}>
-            Modern Pokédex
-          </Text>
-        </Box>
-      </Group>
+        <div>
+          <h1 className="brand-title">
+            Poké<span>Dev</span>
+          </h1>
+          <p className="eyebrow">Modern Pokédex</p>
+        </div>
+      </div>
 
-      <TextInput
-        ref={searchRef}
-        value={search}
-        onChange={(e) => onSearchChange(e.currentTarget.value)}
-        placeholder="Search name or number…"
-        aria-label="Search Pokémon by name or number"
-        size="md"
-        radius="xl"
-        leftSection={<IconSearch size={18} />}
-        rightSection={
-          search ? (
-            <ActionIcon
-              className="pressable"
-              variant="subtle"
-              color="gray"
-              radius="xl"
-              onClick={() => onSearchChange('')}
-              aria-label="Clear search"
-            >
-              <IconX size={16} />
-            </ActionIcon>
-          ) : null
-        }
-        style={{ flex: '1 1 280px', maxWidth: 520 }}
-      />
+      <div className="search">
+        <SearchIcon className="search-icon" size={18} />
+        <input
+          ref={searchRef}
+          className="search-input"
+          type="search"
+          value={search}
+          onChange={(e) => onSearchChange(e.currentTarget.value)}
+          placeholder="Search name or number…"
+          aria-label="Search Pokémon by name or number"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {search && (
+          <button
+            type="button"
+            className="icon-button search-clear"
+            data-variant="subtle"
+            onClick={() => onSearchChange('')}
+            aria-label="Clear search"
+          >
+            <CloseIcon size={16} />
+          </button>
+        )}
+      </div>
 
-      <Group gap="xs" wrap="nowrap">
-        <Indicator label={favoriteCount} size={18} disabled={favoriteCount === 0} color="pokeRed" offset={4}>
-          <ActionIcon
-            className="pressable"
-            variant={showFavorites ? 'filled' : 'default'}
-            color="pokeRed"
-            size="lg"
-            radius="xl"
+      <div className="header-actions">
+        <span className="indicator-anchor">
+          <button
+            type="button"
+            className="icon-button lg"
+            data-variant={showFavorites ? 'filled' : 'default'}
             onClick={onToggleFavorites}
             aria-pressed={showFavorites}
             title={showFavorites ? 'Show all Pokémon' : 'Show favorites only'}
           >
-            {showFavorites ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
-          </ActionIcon>
-        </Indicator>
-        <ActionIcon
-          className="pressable"
-          variant="default"
-          size="lg"
-          radius="xl"
-          onClick={toggleScheme}
+            <HeartIcon filled={showFavorites} size={20} />
+          </button>
+          {favoriteCount > 0 && <span className="indicator">{favoriteCount}</span>}
+        </span>
+        {/* Both icons are rendered; CSS shows the one for the scheme in use. */}
+        <button
+          type="button"
+          className="icon-button lg"
+          data-variant="default"
+          onClick={toggleColorScheme}
           aria-label="Toggle color scheme"
           title="Toggle light/dark theme"
         >
-          {computed === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-        </ActionIcon>
-      </Group>
-    </Group>
+          <SunIcon className="if-dark" size={20} />
+          <MoonIcon className="if-light" size={20} />
+        </button>
+      </div>
+    </header>
   );
 }

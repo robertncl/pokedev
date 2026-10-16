@@ -6,6 +6,8 @@ import {
   padId,
   shinyArtworkUrl,
   STAT_LABELS,
+  textColorOn,
+  thumbUrl,
   TYPE_COLORS,
   TYPES,
 } from './constants.js';
@@ -23,6 +25,12 @@ describe('shinyArtworkUrl', () => {
     expect(shinyArtworkUrl(25)).toBe(
       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/25.png'
     );
+  });
+});
+
+describe('thumbUrl', () => {
+  it('points at the self-hosted thumbnail under the base URL', () => {
+    expect(thumbUrl(25)).toBe('/art/25.avif');
   });
 });
 
@@ -54,13 +62,21 @@ describe('formatName', () => {
   });
 });
 
+describe('textColorOn', () => {
+  it('uses black text on light type colors and white on dark ones', () => {
+    expect(textColorOn(TYPE_COLORS.electric)).toBe('#000');
+    expect(textColorOn(TYPE_COLORS.grass)).toBe('#000');
+    expect(textColorOn(TYPE_COLORS.water)).toBe('#fff');
+    expect(textColorOn(TYPE_COLORS.ghost)).toBe('#fff');
+  });
+});
+
 describe('constant tables', () => {
   it('derives TYPES from the keys of TYPE_COLORS', () => {
     expect(TYPES).toEqual(Object.keys(TYPE_COLORS));
   });
 
-  it('exposes a label for every stat', () => {
-    expect(STAT_LABELS.hp).toBe('HP');
-    expect(STAT_LABELS.speed).toBe('Speed');
+  it('labels the six base stats in data order', () => {
+    expect(STAT_LABELS).toEqual(['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']);
   });
 });
