@@ -1,7 +1,9 @@
 import { createRef } from 'react';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setLocale } from '../i18n/index.js';
 import Header from './Header.jsx';
 
 function setup(props = {}) {
@@ -27,6 +29,10 @@ function setup(props = {}) {
 beforeEach(() => {
   localStorage.clear();
   document.querySelector('meta[name="color-scheme"]').content = 'light dark';
+});
+
+afterEach(async () => {
+  await act(() => setLocale('en'));
 });
 
 describe('Header', () => {
@@ -72,6 +78,18 @@ describe('Header', () => {
   it('marks the favorites filter as pressed and retitles it when active', () => {
     const { getByTitle } = setup({ showFavorites: true });
     expect(getByTitle('Show all Pokémon')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('switches language from the language picker', async () => {
+    const { getByLabelText, findByLabelText } = setup();
+    const picker = getByLabelText('Language');
+    expect(picker).toHaveValue('en');
+    expect(picker.options).toHaveLength(15);
+
+    await userEvent.selectOptions(picker, 'de');
+    expect(await findByLabelText('Pokémon nach Name oder Nummer suchen')).toBeInTheDocument();
+    expect(getByLabelText('Sprache')).toHaveValue('de');
+    expect(localStorage.getItem('pokedev-locale')).toBe('de');
   });
 
   it('toggles the color scheme when the theme button is clicked', async () => {

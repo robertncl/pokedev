@@ -1,4 +1,5 @@
-import { formatName, TYPE_COLORS, TYPES } from '../constants.js';
+import { TYPE_COLORS, TYPES } from '../constants.js';
+import { useI18n } from '../i18n/index.js';
 import { CheckIcon } from './Icons.jsx';
 
 function Chip({ checked, onClick, color, children }) {
@@ -18,14 +19,15 @@ function Chip({ checked, onClick, color, children }) {
 }
 
 export default function TypeFilter({ selected, onSelect }) {
+  const { t, typeName } = useI18n();
   return (
-    <div className="type-filter" role="group" aria-label="Filter by type">
+    <div className="type-filter" role="group" aria-label={t('filter.label')}>
       <Chip checked={selected === ''} onClick={() => onSelect('')}>
-        All
+        {t('filter.all')}
       </Chip>
       {TYPES.map((type) => (
         <Chip key={type} checked={selected === type} onClick={() => onSelect(type)} color={TYPE_COLORS[type]}>
-          {formatName(type)}
+          {typeName(type)}
         </Chip>
       ))}
     </div>

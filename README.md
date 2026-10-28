@@ -10,6 +10,7 @@ A fast Pokédex web app. Browse, search, and filter the first 1025 Pokémon, ins
 - 📊 Detail view with Pokédex entry, abilities, base stats, and a clickable evolution chain
 - ✨ Shiny artwork toggle
 - 🌗 Light & dark themes (follows the system, remembers an override)
+- 🌐 15 languages — English, 简体中文, 繁體中文, हिन्दी, Español, العربية (right-to-left), Français, বাংলা, Português, Русский, Bahasa Indonesia, 日本語, Deutsch, 한국어 and Italiano — following the browser's language until you pick one
 - ♿ Keyboard navigable, honors reduced-motion preference
 
 ## Getting Started
@@ -26,11 +27,17 @@ npm test         # run the test suite
 
 ## How it stays fast
 
-- **No API calls at runtime.** The data is a snapshot of [PokéAPI](https://pokeapi.co) taken at build time. The grid index (id, name, types for all 1025, ~10 KB gzipped) is bundled, so search and type filtering are instant and local. Stats, abilities, Pokédex entries and evolution chains live in 17 small JSON shards (~7 KB gzipped each), fetched when a detail view opens and prefetched when you hover or focus a card.
+- **No API calls at runtime.** The data is a snapshot of [PokéAPI](https://pokeapi.co) taken at build time. The grid index (id, name, types for all 1025, ~10 KB gzipped) is bundled, so search and type filtering are instant and local. Stats, abilities, Pokédex entries and evolution chains live in 17 small JSON shards per language (~7 KB gzipped each), fetched when a detail view opens and prefetched when you hover or focus a card. Another language costs one small chunk of strings plus, for languages with official Pokémon names, ~10 KB of names.
 - **Right-sized artwork.** Grid and evolution-chain images are self-hosted 256px AVIF thumbnails (~6 KB each, instead of the ~140 KB official PNGs). The detail view shows the cached thumbnail at once and swaps in the full-size artwork when it arrives.
 - **Prerendered.** `npm run build` renders the initial view (header, filters, first page of the grid) into `index.html` with the stylesheet inlined, so the page paints before any JavaScript loads; React then hydrates it.
 - **No UI framework.** Plain CSS (`src/index.css`) and inline SVG icons; the detail view is a native `<dialog>`. Fonts are self-hosted with metric-matched fallbacks so the font swap doesn't shift the layout.
 - **Cheap long lists.** Cards past the first page use `content-visibility: auto`, the 3D tilt effect only applies while a card is hovered, and cards are memoized so typing or favoriting doesn't re-render the grid.
+
+## Languages
+
+UI strings live in `src/i18n/messages/<locale>.js`, one file per language in `src/i18n/locales.js`; English is bundled and the rest are loaded when picked. Pokémon, ability and type names, genus and Pokédex entries use the official translations from PokéAPI for the languages the games ship in (Japanese, Korean, Chinese, French, German, Spanish, Italian). The other languages show the English Pokémon names, as the games do in those regions, with translated type and stat names. Search matches both the localized and the English name, ignoring accents and hiragana/katakana.
+
+To add a language, add it to `LOCALES` (with its PokéAPI language codes, if it has official Pokémon data), copy `messages/en.js` to `messages/<code>.js` and translate it, then run `npm run data` if it has Pokémon data. A test checks that every language has every string.
 
 ## Updating the data
 
@@ -42,7 +49,7 @@ npm run data -- --refresh    # re-download everything from PokéAPI
 npm run data -- --force-art  # re-encode every thumbnail
 ```
 
-It writes `src/data/pokedex.json`, `public/data/details/*.json`, and `public/art/*.avif`.
+It writes `src/data/pokedex.json`, `src/data/locales/*.json`, `public/data/details/<locale>/*.json`, and `public/art/*.avif`.
 
 ## Browser support
 
@@ -55,7 +62,9 @@ scripts/
   build-data.mjs     # PokéAPI → static data snapshot + thumbnails
 src/
   data/pokedex.json  # generated grid index
+  data/locales/      # generated Pokémon and ability names per language
   data.js            # index lookups + detail-shard loader with caching
+  i18n/              # languages, UI strings, and the current-language store
   constants.js       # type colors, stat labels, display-name overrides, URLs
   hooks.js           # favorites store, pointer tilt
   colorScheme.js     # light/dark override

@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { formatName, padId, PAGE_SIZE, thumbUrl } from '../constants.js';
+import { padId, PAGE_SIZE, thumbUrl } from '../constants.js';
 import { prefetchDetails } from '../data.js';
 import { useTilt } from '../hooks.js';
+import { useI18n } from '../i18n/index.js';
 import { HeartIcon } from './Icons.jsx';
 import TypeBadge from './TypeBadge.jsx';
 
@@ -13,10 +14,11 @@ const EAGER_CARDS = 10;
 const HIGH_PRIORITY_CARDS = 2;
 
 function PokemonCard({ pokemon, index, isFavorite, onToggleFavorite, onSelect }) {
-  const { id, name, types } = pokemon;
-  const label = formatName(name);
+  const { id, types } = pokemon;
+  const { t, pokemonName, dataLocale } = useI18n();
+  const label = pokemonName(pokemon);
   const tiltRef = useTilt();
-  const prefetch = () => prefetchDetails(id);
+  const prefetch = () => prefetchDetails(id, dataLocale);
 
   return (
     <article
@@ -32,7 +34,7 @@ function PokemonCard({ pokemon, index, isFavorite, onToggleFavorite, onSelect })
           data-variant={isFavorite ? 'light' : 'subtle'}
           onClick={() => onToggleFavorite(id)}
           aria-pressed={isFavorite}
-          aria-label={isFavorite ? `Remove ${label} from favorites` : `Add ${label} to favorites`}
+          aria-label={t(isFavorite ? 'card.removeFavorite' : 'card.addFavorite', { name: label })}
         >
           <HeartIcon filled={isFavorite} size={18} />
         </button>
@@ -58,7 +60,7 @@ function PokemonCard({ pokemon, index, isFavorite, onToggleFavorite, onSelect })
         className="card-name"
         onClick={() => onSelect(id)}
         onFocus={prefetch}
-        aria-label={`View details for ${label}`}
+        aria-label={t('card.view', { name: label })}
       >
         {label}
       </button>

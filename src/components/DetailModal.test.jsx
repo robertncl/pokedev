@@ -79,7 +79,7 @@ describe('DetailModal', () => {
     const { getByText, findByText } = setup();
 
     await findByText('Flame Pokémon');
-    expect(fetchDetails).toHaveBeenCalledWith(6);
+    expect(fetchDetails).toHaveBeenCalledWith(6, 'en');
     expect(getByText('Spits fire that is hot.')).toBeInTheDocument();
     expect(getByText('Blaze')).toBeInTheDocument();
     expect(getByText('Solar Power')).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('DetailModal', () => {
     expect(dialog).toHaveAttribute('aria-label', 'Squirtle details');
     expect(getByText('Loading Pokédex entry…')).toBeInTheDocument();
     expect(getByLabelText('Toggle shiny artwork')).toHaveAttribute('aria-pressed', 'false');
-    expect(fetchDetails).toHaveBeenLastCalledWith(7);
+    expect(fetchDetails).toHaveBeenLastCalledWith(7, 'en');
   });
 
   it('calls onToggleFavorite with the id and reflects favorite state', async () => {

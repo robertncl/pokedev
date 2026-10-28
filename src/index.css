@@ -450,6 +450,12 @@ img {
   text-transform: uppercase;
 }
 
+/* Letter-spacing breaks up connected scripts (Arabic letters, the headline of
+   Devanagari and Bengali). */
+:is(:lang(ar), :lang(hi), :lang(bn)) :is(.eyebrow, .badge, .card-id, .fact-label, .section-title, .ability) {
+  letter-spacing: normal;
+}
+
 .search {
   position: relative;
   flex: 1 1 280px;
@@ -491,13 +497,13 @@ img {
 }
 
 .search-icon {
-  left: 12px;
+  inset-inline-start: 12px;
   color: var(--c-dimmed);
   pointer-events: none;
 }
 
 .search-clear {
-  right: 7px;
+  inset-inline-end: 7px;
 
   &:active {
     scale: 0.88;
@@ -509,6 +515,37 @@ img {
   gap: 10px;
 }
 
+.language {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding-inline: 9px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  background: var(--c-surface);
+  color: var(--c-bright);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &:has(.language-select:focus-visible) {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 2px;
+  }
+}
+
+.language-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+  /* 16px keeps iOS from zooming in when it opens. */
+  font-size: 16px;
+}
+
 .indicator-anchor {
   position: relative;
   display: inline-flex;
@@ -517,9 +554,13 @@ img {
 .indicator {
   position: absolute;
   top: 4px;
-  right: 4px;
+  inset-inline-end: 4px;
   z-index: 1;
   translate: 50% -50%;
+
+  &:dir(rtl) {
+    translate: -50% -50%;
+  }
   min-width: 18px;
   height: 18px;
   padding-inline: 5px;
@@ -996,6 +1037,7 @@ img {
 .fact-value {
   font-size: 18px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .section-title {
@@ -1037,37 +1079,35 @@ img {
   white-space: pre;
 }
 
+/* One grid for every row, so the bars line up however long the labels are
+   in the current language. */
 .stats {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) 32px 1fr;
   gap: 12px;
 }
 
 .stat-row {
-  display: flex;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 12px;
   font-size: 14px;
   line-height: 1.45;
 }
 
 .stat-label {
-  flex: none;
-  width: 64px;
   color: var(--c-dimmed);
   font-weight: 700;
 }
 
 .stat-value {
-  flex: none;
-  width: 32px;
   font-family: var(--font-mono);
   font-weight: 800;
-  text-align: right;
+  text-align: end;
 }
 
 .stat-track {
-  flex: 1;
   height: 12px;
   overflow: hidden;
   border-radius: var(--radius-xl);
@@ -1077,7 +1117,8 @@ img {
 .stat-fill {
   display: block;
   height: 100%;
-  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  border-start-start-radius: var(--radius-xl);
+  border-end-start-radius: var(--radius-xl);
   background: var(--c-stat-red);
   transition: width 0.6s ease;
 
@@ -1122,6 +1163,10 @@ img {
 
 .evolution-arrow {
   color: var(--c-dimmed);
+
+  &:dir(rtl) {
+    scale: -1 1;
+  }
 }
 
 .evolution-mon {

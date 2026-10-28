@@ -97,9 +97,9 @@ describe('PokemonCard', () => {
   it('prefetches details when the card is hovered or focused', () => {
     const { container, getByRole } = setup();
     fireEvent.pointerEnter(container.querySelector('article'));
-    expect(prefetchDetails).toHaveBeenCalledWith(25);
+    expect(prefetchDetails).toHaveBeenCalledWith(25, 'en');
     prefetchDetails.mockClear();
     getByRole('button', { name: 'View details for Pikachu' }).focus();
-    expect(prefetchDetails).toHaveBeenCalledWith(25);
+    expect(prefetchDetails).toHaveBeenCalledWith(25, 'en');
   });
 });
