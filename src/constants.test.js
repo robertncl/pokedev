@@ -5,7 +5,7 @@ import {
   NAME_OVERRIDES,
   padId,
   shinyArtworkUrl,
-  STAT_LABELS,
+  STAT_KEYS,
   textColorOn,
   thumbUrl,
   TYPE_COLORS,
@@ -76,7 +76,7 @@ describe('constant tables', () => {
     expect(TYPES).toEqual(Object.keys(TYPE_COLORS));
   });
 
-  it('labels the six base stats in data order', () => {
-    expect(STAT_LABELS).toEqual(['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']);
+  it('names the six base stats in data order', () => {
+    expect(STAT_KEYS).toEqual(['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed']);
   });
 });

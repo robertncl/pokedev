@@ -8,7 +8,7 @@ describe('entry-server render', () => {
     const html = render();
     expect(html).toContain('Poké<span>Dev</span>');
     expect(html).toContain('aria-label="Filter by type"');
-    expect(html).toMatch(/Showing <!-- -->24<!-- --> of <!-- -->1025<!-- --> Pokémon/);
+    expect(html).toMatch(/Showing 24 of 1,025 Pokémon/);
     expect(html.match(/<article/g)).toHaveLength(24);
     expect(html).toContain('src="/art/1.avif"');
   });

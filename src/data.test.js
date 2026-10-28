@@ -49,7 +49,7 @@ describe('fetchDetails', () => {
     const { fetchDetails } = await freshData();
     fetch.mockResolvedValue(jsonResponse({ 25: pikachu }));
     await expect(fetchDetails(25)).resolves.toEqual(pikachu);
-    expect(fetch).toHaveBeenCalledWith('/data/details/0.json');
+    expect(fetch).toHaveBeenCalledWith('/data/details/en/0.json');
   });
 
   it('maps ids to shards of DETAIL_SHARD_SIZE consecutive dex numbers', async () => {
@@ -61,7 +61,16 @@ describe('fetchDetails', () => {
     );
     await fetchDetails(lastOfFirst);
     await fetchDetails(firstOfSecond);
-    expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/data/details/0.json', '/data/details/1.json']);
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/data/details/en/0.json', '/data/details/en/1.json']);
+  });
+
+  it('fetches and caches each language separately', async () => {
+    const { fetchDetails } = await freshData();
+    fetch.mockResolvedValue(jsonResponse({ 25: pikachu }));
+    await fetchDetails(25, 'ja');
+    await fetchDetails(25, 'ja');
+    await fetchDetails(25);
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/data/details/ja/0.json', '/data/details/en/0.json']);
   });
 
   it('shares one request between Pokémon in the same shard', async () => {

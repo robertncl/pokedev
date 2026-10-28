@@ -1,36 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
-import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS, thumbUrl } from '../constants.js';
+import { artworkUrl, padId, shinyArtworkUrl, STAT_KEYS, thumbUrl } from '../constants.js';
 import { fetchDetails, getPokemon } from '../data.js';
 import { useTilt } from '../hooks.js';
+import { useI18n } from '../i18n/index.js';
 import EvolutionChain from './EvolutionChain.jsx';
 import { CloseIcon, HeartIcon, SparklesIcon } from './Icons.jsx';
 import StatBar from './StatBar.jsx';
 import TypeBadge from './TypeBadge.jsx';
 
-// The detail record for `id`: `details` is null while loading, `error` is set
-// if the request failed, and `retry` refetches.
-function useDetails(id) {
-  const [state, setState] = useState({ id: null, details: null, error: false });
+// The detail record for `id` in `locale`: `details` is null while loading,
+// `error` is set if the request failed, and `retry` refetches.
+function useDetails(id, locale) {
+  const [state, setState] = useState({ key: null, details: null, error: false });
   const [attempt, setAttempt] = useState(0);
+  const key = `${locale}/${id}`;
 
   useEffect(() => {
     let cancelled = false;
-    fetchDetails(id).then(
+    fetchDetails(id, locale).then(
       (details) => {
-        if (!cancelled) setState({ id, details, error: false });
+        if (!cancelled) setState({ key, details, error: false });
       },
       () => {
-        if (!cancelled) setState({ id, details: null, error: true });
+        if (!cancelled) setState({ key, details: null, error: true });
       }
     );
     return () => {
       cancelled = true;
     };
-  }, [id, attempt]);
+  }, [id, locale, key, attempt]);
 
-  const current = state.id === id ? state : { details: null, error: false };
+  const current = state.key === key ? state : { details: null, error: false };
   const retry = () => {
-    setState({ id: null, details: null, error: false });
+    setState({ key: null, details: null, error: false });
     setAttempt((n) => n + 1);
   };
   return { ...current, retry };
@@ -60,11 +62,12 @@ function Fact({ label, value }) {
 }
 
 export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose, onNavigate }) {
+  const { t, locale, dataLocale, pokemonName, abilityName, formatNumber, formatUnit } = useI18n();
   const pokemon = getPokemon(id);
-  const name = formatName(pokemon.name);
+  const name = pokemonName(pokemon);
   const dialogRef = useRef(null);
   const tiltRef = useTilt();
-  const { details, error, retry } = useDetails(id);
+  const { details, error, retry } = useDetails(id, dataLocale);
   // Keyed by id so navigating to another Pokémon resets to regular artwork.
   const [shinyId, setShinyId] = useState(null);
   const shiny = shinyId === id;
@@ -106,23 +109,26 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
   if (error) {
     flavor = (
       <>
-        Couldn&apos;t load details.{' '}
+        {t('detail.error')}{' '}
         <button type="button" className="link-button" onClick={retry}>
-          Retry
+          {t('detail.retry')}
         </button>
       </>
     );
   } else if (details) {
-    flavor = details.flavor || 'No Pokédex entry available.';
+    flavor = details.flavor || t('detail.noFlavor');
   } else {
-    flavor = 'Loading Pokédex entry…';
+    flavor = t('detail.loadingFlavor');
   }
+  // Languages without official Pokémon data show the English text; `dir`
+  // keeps its punctuation in place on right-to-left pages.
+  const dataText = details && dataLocale !== locale ? { lang: dataLocale, dir: 'auto' } : null;
 
   let evolution;
   if (details?.evolution) {
     evolution = <EvolutionChain levels={details.evolution} currentId={id} onNavigate={onNavigate} />;
   } else {
-    evolution = <p className="muted">{details || error ? 'No evolution data available.' : 'Loading evolution chain…'}</p>;
+    evolution = <p className="muted">{t(details || error ? 'detail.noEvolution' : 'detail.loadingEvolution')}</p>;
   }
 
   return (
@@ -130,7 +136,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
       ref={dialogRef}
       className="modal"
       closedby="any"
-      aria-label={`${name} details`}
+      aria-label={t('detail.label', { name })}
       onCancel={handleCancel}
       onClose={onClose}
       onClick={handleClick}
@@ -140,7 +146,11 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
           <div className="modal-heading">
             <span className="modal-number">{padId(id)}</span>
             <h2 className="modal-title">{name}</h2>
-            {details?.genus && <span className="modal-genus">{details.genus}</span>}
+            {details?.genus && (
+              <span className="modal-genus" {...dataText}>
+                {details.genus}
+              </span>
+            )}
           </div>
           <div className="modal-actions">
             <button
@@ -148,10 +158,10 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
               className="icon-button lg"
               data-variant={shiny ? 'filled' : 'default'}
               data-color="yellow"
-              data-tooltip={shiny ? 'Show regular artwork' : 'Show shiny artwork'}
+              data-tooltip={t(shiny ? 'detail.showRegular' : 'detail.showShiny')}
               onClick={() => setShinyId(shiny ? null : id)}
               aria-pressed={shiny}
-              aria-label="Toggle shiny artwork"
+              aria-label={t('detail.shiny')}
             >
               <SparklesIcon size={18} />
             </button>
@@ -161,7 +171,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
               data-variant={isFavorite ? 'filled' : 'default'}
               onClick={() => onToggleFavorite(id)}
               aria-pressed={isFavorite}
-              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={t(isFavorite ? 'detail.removeFavorite' : 'detail.addFavorite')}
             >
               <HeartIcon filled={isFavorite} size={18} />
             </button>
@@ -170,7 +180,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
               className="icon-button lg"
               data-variant="default"
               onClick={requestClose}
-              aria-label="Close details"
+              aria-label={t('detail.close')}
             >
               <CloseIcon size={18} />
             </button>
@@ -200,45 +210,50 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
                 <TypeBadge key={type} type={type} size="md" />
               ))}
             </div>
-            <p className="flavor">{flavor}</p>
+            <p className="flavor" {...dataText}>
+              {flavor}
+            </p>
           </div>
 
           <div>
             <div className="facts">
-              <Fact label="Height" value={details ? `${(details.height / 10).toFixed(1)} m` : '…'} />
-              <Fact label="Weight" value={details ? `${(details.weight / 10).toFixed(1)} kg` : '…'} />
-              <Fact label="Base XP" value={details ? (details.baseExp ?? '—') : '…'} />
+              <Fact label={t('detail.height')} value={details ? formatUnit(details.height / 10, 'meter') : '…'} />
+              <Fact label={t('detail.weight')} value={details ? formatUnit(details.weight / 10, 'kilogram') : '…'} />
+              <Fact
+                label={t('detail.baseExp')}
+                value={details ? (details.baseExp == null ? '—' : formatNumber(details.baseExp)) : '…'}
+              />
             </div>
 
-            <h3 className="section-title">Abilities</h3>
+            <h3 className="section-title">{t('detail.abilities')}</h3>
             <div className="abilities">
               {details ? (
                 details.abilities.map((ability, i) => (
                   <span key={i} className="ability">
-                    {formatName(ability.name)}
-                    {ability.hidden && <span className="ability-hidden"> · hidden</span>}
+                    {abilityName(ability.name)}
+                    {ability.hidden && <span className="ability-hidden"> · {t('detail.hiddenAbility')}</span>}
                   </span>
                 ))
               ) : (
-                <span className="muted">{error ? '—' : 'Loading…'}</span>
+                <span className="muted">{error ? '—' : t('detail.loading')}</span>
               )}
             </div>
 
-            <h3 className="section-title">Base Stats</h3>
+            <h3 className="section-title">{t('detail.baseStats')}</h3>
             <div className="stats">
-              {STAT_LABELS.map((label, i) => (
-                <StatBar key={label} label={label} value={details?.stats[i]} />
+              {STAT_KEYS.map((key, i) => (
+                <StatBar key={key} label={t(`stat.${key}`)} value={details?.stats[i]} />
               ))}
               <div className="stat-row stat-total">
-                <span className="stat-label">Total</span>
-                <span className="stat-value">{total}</span>
+                <span className="stat-label">{t('detail.total')}</span>
+                <span className="stat-value">{total == null ? null : formatNumber(total)}</span>
               </div>
             </div>
           </div>
         </div>
 
         <section>
-          <h3 className="section-title">Evolution Chain</h3>
+          <h3 className="section-title">{t('detail.evolution')}</h3>
           {evolution}
         </section>
       </div>

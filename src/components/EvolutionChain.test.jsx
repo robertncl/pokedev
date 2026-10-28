@@ -56,6 +56,6 @@ describe('EvolutionChain', () => {
   it('prefetches details for a stage on hover', () => {
     const { getByRole } = render(<EvolutionChain levels={charmanderLine} currentId={4} onNavigate={() => {}} />);
     fireEvent.pointerEnter(getByRole('button', { name: 'View Charmeleon' }));
-    expect(prefetchDetails).toHaveBeenCalledWith(5);
+    expect(prefetchDetails).toHaveBeenCalledWith(5, 'en');
   });
 });

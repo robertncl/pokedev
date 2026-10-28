@@ -2,6 +2,7 @@ import { act, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App.jsx';
+import { setLocale } from './i18n/index.js';
 
 // The real snapshot, cut to the first 30 Pokémon: a page and a bit.
 vi.mock('./data.js', async (importOriginal) => {
@@ -35,8 +36,9 @@ beforeEach(() => {
   fetchDetails.mockReturnValue(new Promise(() => {}));
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.unstubAllGlobals();
+  await act(() => setLocale('en'));
 });
 
 const searchBox = (utils) => utils.getByLabelText('Search Pokémon by name or number');
@@ -153,7 +155,7 @@ describe('App', () => {
     await userEvent.click(getByRole('button', { name: 'View details for Bulbasaur' }));
     await userEvent.click(await findByRole('button', { name: 'View Ivysaur' }));
     expect(getByLabelText('Ivysaur details')).toBeInTheDocument();
-    expect(fetchDetails).toHaveBeenLastCalledWith(2);
+    expect(fetchDetails).toHaveBeenLastCalledWith(2, 'en');
   });
 
   it('focuses the search field when "/" is pressed', async () => {
@@ -179,6 +181,38 @@ describe('App', () => {
     const last = observers.at(-1);
     unmount();
     expect(last.disconnect).toHaveBeenCalled();
+  });
+
+  it('searches ignoring accents and punctuation', async () => {
+    const utils = render(<App />);
+    await userEvent.type(searchBox(utils), 'NIDÓRAN-f');
+    await waitFor(() => expect(utils.getByText('Showing 1 of 1 Pokémon')).toBeInTheDocument());
+    expect(utils.getByText('Nidoran ♀')).toBeInTheDocument();
+  });
+
+  it('switches language, searching by localized and English names', async () => {
+    const utils = render(<App />);
+    await act(() => setLocale('ja'));
+    expect(utils.getByText('30匹中 24匹を表示')).toBeInTheDocument();
+    expect(utils.getByText('フシギダネ')).toBeInTheDocument();
+    expect(utils.getByRole('checkbox', { name: 'どく' })).toBeInTheDocument();
+
+    // Hiragana finds katakana names.
+    const search = utils.getByRole('searchbox');
+    await userEvent.type(search, 'ひとかげ');
+    await waitFor(() => expect(utils.getByText('1匹中 1匹を表示')).toBeInTheDocument());
+    expect(utils.getByText('ヒトカゲ')).toBeInTheDocument();
+
+    await userEvent.clear(search);
+    await userEvent.type(search, 'squirtle');
+    await waitFor(() => expect(utils.getByText('ゼニガメ')).toBeInTheDocument());
+  });
+
+  it('fetches details in the language of the Pokémon data', async () => {
+    const { getByRole } = render(<App />);
+    await act(() => setLocale('fr'));
+    await userEvent.click(getByRole('button', { name: 'Voir la fiche de Bulbizarre' }));
+    expect(fetchDetails).toHaveBeenLastCalledWith(1, 'fr');
   });
 
   it('does not page while the sentinel is out of range', () => {

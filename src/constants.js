@@ -36,8 +36,9 @@ export function textColorOn(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? '#000' : '#fff';
 }
 
-// In the order the detail data stores base stats.
-export const STAT_LABELS = ['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'];
+// In the order the detail data stores base stats; labels are the `stat.*`
+// messages in src/i18n/messages/.
+export const STAT_KEYS = ['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed'];
 
 // Display names for Pokémon whose API name is a default-form slug or
 // loses punctuation (the API only exposes lowercase hyphenated names).
