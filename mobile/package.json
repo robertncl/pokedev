@@ -35,7 +35,9 @@
     "@istanbuljs/load-nyc-config": {
       "js-yaml": "4.3.2"
     },
-    "react-native": "$react-native"
+    "react-native": "$react-native",
+    "glob": "14.0.3",
+    "minimatch": "11.0.4"
   },
   "devDependencies": {
     "@react-native/jest-preset": "0.88.1",
