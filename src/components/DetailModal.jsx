@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { artworkUrl, padId, shinyArtworkUrl, STAT_KEYS, thumbUrl } from '../constants.js';
 import { fetchDetails, getPokemon } from '../data.js';
-import { useTilt } from '../hooks.js';
 import { useI18n } from '../i18n/index.js';
 import EvolutionChain from './EvolutionChain.jsx';
 import { CloseIcon, HeartIcon, SparklesIcon } from './Icons.jsx';
@@ -66,7 +65,6 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
   const pokemon = getPokemon(id);
   const name = pokemonName(pokemon);
   const dialogRef = useRef(null);
-  const tiltRef = useTilt();
   const { details, error, retry } = useDetails(id, dataLocale);
   // Keyed by id so navigating to another Pokémon resets to regular artwork.
   const [shinyId, setShinyId] = useState(null);
@@ -104,6 +102,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
   const placeholder = loadedArt.has(regularArt) ? regularArt : thumbUrl(id);
 
   const total = details?.stats.reduce((sum, stat) => sum + stat, 0);
+  const bestStat = details ? details.stats.indexOf(Math.max(...details.stats)) : -1;
 
   let flavor;
   if (error) {
@@ -189,7 +188,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
 
         <div className="modal-grid">
           <div className="modal-art">
-            <div ref={tiltRef} className="tilt art-hero">
+            <div className="art-hero">
               <div className="dish">
                 {!artReady && <img className="sprite" src={placeholder} alt="" />}
                 <img
@@ -242,7 +241,7 @@ export default function DetailModal({ id, isFavorite, onToggleFavorite, onClose,
             <h3 className="section-title">{t('detail.baseStats')}</h3>
             <div className="stats">
               {STAT_KEYS.map((key, i) => (
-                <StatBar key={key} label={t(`stat.${key}`)} value={details?.stats[i]} />
+                <StatBar key={key} label={t(`stat.${key}`)} value={details?.stats[i]} highlight={i === bestStat} />
               ))}
               <div className="stat-row stat-total">
                 <span className="stat-label">{t('detail.total')}</span>

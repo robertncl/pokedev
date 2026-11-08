@@ -6,8 +6,8 @@ import { render } from './entry-server.jsx';
 describe('entry-server render', () => {
   it('prerenders the header, filters and first page of the grid', () => {
     const html = render();
-    expect(html).toContain('Poké<span>Dev</span>');
-    expect(html).toContain('aria-label="Filter by type"');
+    expect(html).toContain('PokéDev</h1>');
+    expect(html).toContain('aria-labelledby="type-filter-label"');
     expect(html).toMatch(/Showing 24 of 1,025 Pokémon/);
     expect(html.match(/<article/g)).toHaveLength(24);
     expect(html).toContain('src="/art/1.avif"');

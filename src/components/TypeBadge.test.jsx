@@ -3,21 +3,16 @@ import { describe, expect, it } from 'vitest';
 import TypeBadge from './TypeBadge.jsx';
 
 describe('TypeBadge', () => {
-  it('renders the formatted type name in its type color with contrasting text', () => {
+  it('renders the formatted type name with a type-colored dot', () => {
     const { getByText } = render(<TypeBadge type="fire" />);
     const badge = getByText('Fire');
-    expect(badge.style.getPropertyValue('--badge-bg')).toBe('#EE8130');
-    expect(badge.style.getPropertyValue('--badge-text')).toBe('#000');
-  });
-
-  it('uses white text on dark type colors', () => {
-    const { getByText } = render(<TypeBadge type="ghost" />);
-    expect(getByText('Ghost').style.getPropertyValue('--badge-text')).toBe('#fff');
+    expect(badge.style.getPropertyValue('--type-color')).toBe('#EE8130');
+    expect(badge.querySelector('.type-dot')).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('falls back to a default color for an unknown type', () => {
     const { getByText } = render(<TypeBadge type="mystery" />);
-    expect(getByText('Mystery').style.getPropertyValue('--badge-bg')).toBe('#9aa0b5');
+    expect(getByText('Mystery').style.getPropertyValue('--type-color')).toBe('#9aa0b5');
   });
 
   it('supports the larger size', () => {

@@ -42,69 +42,67 @@ export default function Header({
   const { t, formatNumber } = useI18n();
   return (
     <header className="header">
-      <div className="brand">
-        <Pokeball size={42} />
-        <div>
-          <h1 className="brand-title">
-            Poké<span>Dev</span>
-          </h1>
-          <p className="eyebrow">{t('header.eyebrow')}</p>
+      <div className="header-inner">
+        <div className="brand">
+          <Pokeball size={24} />
+          <h1 className="brand-title">PokéDev</h1>
+          <p className="brand-tagline">{t('header.eyebrow')}</p>
         </div>
-      </div>
 
-      <div className="search">
-        <SearchIcon className="search-icon" size={18} />
-        <input
-          ref={searchRef}
-          className="search-input"
-          type="search"
-          value={search}
-          onChange={(e) => onSearchChange(e.currentTarget.value)}
-          placeholder={t('search.placeholder')}
-          aria-label={t('search.label')}
-          autoComplete="off"
-          spellCheck={false}
-        />
-        {search && (
-          <button
-            type="button"
-            className="icon-button search-clear"
-            data-variant="subtle"
-            onClick={() => onSearchChange('')}
-            aria-label={t('search.clear')}
-          >
-            <CloseIcon size={16} />
-          </button>
-        )}
-      </div>
+        <div className="search">
+          <SearchIcon className="search-icon" size={18} />
+          <input
+            ref={searchRef}
+            className="search-input"
+            type="search"
+            value={search}
+            onChange={(e) => onSearchChange(e.currentTarget.value)}
+            placeholder={t('search.placeholder')}
+            aria-label={t('search.label')}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {search && (
+            <button
+              type="button"
+              className="icon-button search-clear"
+              data-variant="subtle"
+              onClick={() => onSearchChange('')}
+              aria-label={t('search.clear')}
+            >
+              <CloseIcon size={16} />
+            </button>
+          )}
+        </div>
 
-      <div className="header-actions">
-        <span className="indicator-anchor">
+        <div className="header-actions">
+          <span className="indicator-anchor">
+            <button
+              type="button"
+              className="icon-button lg"
+              data-variant={showFavorites ? 'filled' : 'default'}
+              onClick={onToggleFavorites}
+              aria-pressed={showFavorites}
+              title={t(showFavorites ? 'favorites.showAll' : 'favorites.showOnly')}
+            >
+              <HeartIcon filled={showFavorites} size={20} />
+            </button>
+            {favoriteCount > 0 && <span className="indicator">{formatNumber(favoriteCount)}</span>}
+          </span>
+          <LanguagePicker />
+          {/* Both icons are rendered; CSS shows the one for the scheme in use. */}
           <button
             type="button"
             className="icon-button lg"
-            data-variant={showFavorites ? 'filled' : 'default'}
-            onClick={onToggleFavorites}
-            aria-pressed={showFavorites}
-            title={t(showFavorites ? 'favorites.showAll' : 'favorites.showOnly')}
+            data-variant="default"
+            onClick={toggleColorScheme}
+            aria-label={t('theme.label')}
+            title={t('theme.title')}
           >
-            <HeartIcon filled={showFavorites} size={20} />
+            <SunIcon className="if-dark" size={20} />
+            <MoonIcon className="if-light" size={20} />
           </button>
-          {favoriteCount > 0 && <span className="indicator">{formatNumber(favoriteCount)}</span>}
-        </span>
-        <LanguagePicker />
-        {/* Both icons are rendered; CSS shows the one for the scheme in use. */}
-        <button
-          type="button"
-          className="icon-button lg"
-          data-variant="default"
-          onClick={toggleColorScheme}
-          aria-label={t('theme.label')}
-          title={t('theme.title')}
-        >
-          <SunIcon className="if-dark" size={20} />
-          <MoonIcon className="if-light" size={20} />
-        </button>
+        </div>
       </div>
     </header>
   );

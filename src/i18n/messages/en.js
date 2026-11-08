@@ -17,7 +17,7 @@ export default {
   'results.count': 'Showing {shown} of {total} Pokémon',
   'results.empty': 'No Pokémon found.',
   'results.emptyFavorites': 'No Pokémon found in your favorites.',
-  'results.clear': 'Clear Filters',
+  'results.clear': 'Clear filters',
   'results.loadingMore': 'Loading more…',
   'footer.text': 'Data from {source} · Built with React · Pokémon and Pokémon character names are trademarks of Nintendo.',
 
@@ -42,9 +42,9 @@ export default {
   'detail.abilities': 'Abilities',
   'detail.hiddenAbility': 'hidden',
   'detail.loading': 'Loading…',
-  'detail.baseStats': 'Base Stats',
+  'detail.baseStats': 'Base stats',
   'detail.total': 'Total',
-  'detail.evolution': 'Evolution Chain',
+  'detail.evolution': 'Evolution chain',
   'detail.loadingEvolution': 'Loading evolution chain…',
   'detail.noEvolution': 'No evolution data available.',
 

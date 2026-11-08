@@ -26,16 +26,6 @@ export const TYPE_COLORS = {
 
 export const TYPES = Object.keys(TYPE_COLORS);
 
-// Black or white, whichever reads better on a type color (by relative
-// luminance), so badge text stays legible on both light and dark types.
-export function textColorOn(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? '#000' : '#fff';
-}
-
 // In the order the detail data stores base stats; labels are the `stat.*`
 // messages in src/i18n/messages/.
 export const STAT_KEYS = ['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed'];
