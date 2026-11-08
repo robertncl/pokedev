@@ -127,7 +127,7 @@ describe('App', () => {
     await userEvent.click(getByRole('button', { name: 'Show favorites only' }));
     expect(getByText('No Pokémon found in your favorites.')).toBeInTheDocument();
 
-    await userEvent.click(getByText('Clear Filters'));
+    await userEvent.click(getByText('Clear filters'));
     expect(getByText('Showing 24 of 30 Pokémon')).toBeInTheDocument();
   });
 

@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { padId, PAGE_SIZE, thumbUrl } from '../constants.js';
 import { prefetchDetails } from '../data.js';
-import { useTilt } from '../hooks.js';
 import { useI18n } from '../i18n/index.js';
 import { HeartIcon } from './Icons.jsx';
 import TypeBadge from './TypeBadge.jsx';
@@ -17,29 +16,10 @@ function PokemonCard({ pokemon, index, isFavorite, onToggleFavorite, onSelect })
   const { id, types } = pokemon;
   const { t, pokemonName, dataLocale } = useI18n();
   const label = pokemonName(pokemon);
-  const tiltRef = useTilt();
   const prefetch = () => prefetchDetails(id, dataLocale);
 
   return (
-    <article
-      ref={tiltRef}
-      className={index < PAGE_SIZE ? 'card tilt' : 'card tilt deferred'}
-      onPointerEnter={prefetch}
-    >
-      <div className="card-top">
-        <span className="card-id">{padId(id)}</span>
-        <button
-          type="button"
-          className="icon-button card-heart"
-          data-variant={isFavorite ? 'light' : 'subtle'}
-          onClick={() => onToggleFavorite(id)}
-          aria-pressed={isFavorite}
-          aria-label={t(isFavorite ? 'card.removeFavorite' : 'card.addFavorite', { name: label })}
-        >
-          <HeartIcon filled={isFavorite} size={18} />
-        </button>
-      </div>
-
+    <article className={index < PAGE_SIZE ? 'card' : 'card deferred'} onPointerEnter={prefetch}>
       <div className="dish">
         <img
           className="sprite"
@@ -53,21 +33,38 @@ function PokemonCard({ pokemon, index, isFavorite, onToggleFavorite, onSelect })
         />
       </div>
 
-      {/* Its ::after overlay stretches over the card, making the whole card
-          the click target without nesting the favorite button inside it. */}
-      <button
-        type="button"
-        className="card-name"
-        onClick={() => onSelect(id)}
-        onFocus={prefetch}
-        aria-label={t('card.view', { name: label })}
-      >
-        {label}
-      </button>
-      <div className="badges">
-        {types.map((type) => (
-          <TypeBadge key={type} type={type} />
-        ))}
+      <div className="card-body">
+        <div className="card-top">
+          {/* Its ::after overlay stretches over the card, making the whole card
+              the click target without nesting the favorite button inside it. */}
+          <button
+            type="button"
+            className="card-name"
+            onClick={() => onSelect(id)}
+            onFocus={prefetch}
+            aria-label={t('card.view', { name: label })}
+          >
+            {label}
+          </button>
+          <button
+            type="button"
+            className="icon-button card-heart"
+            data-variant={isFavorite ? 'light' : 'subtle'}
+            onClick={() => onToggleFavorite(id)}
+            aria-pressed={isFavorite}
+            aria-label={t(isFavorite ? 'card.removeFavorite' : 'card.addFavorite', { name: label })}
+          >
+            <HeartIcon filled={isFavorite} size={18} />
+          </button>
+        </div>
+        <div className="card-meta">
+          <span className="card-id">{padId(id)}</span>
+          <div className="badges">
+            {types.map((type) => (
+              <TypeBadge key={type} type={type} />
+            ))}
+          </div>
+        </div>
       </div>
     </article>
   );

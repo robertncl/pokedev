@@ -89,9 +89,9 @@ describe('PokemonCard', () => {
     const open = getByRole('button', { name: 'View details for Pikachu' });
     expect(open).not.toContainElement(favorite);
     await userEvent.tab();
-    expect(favorite).toHaveFocus();
-    await userEvent.tab();
     expect(open).toHaveFocus();
+    await userEvent.tab();
+    expect(favorite).toHaveFocus();
   });
 
   it('prefetches details when the card is hovered or focused', () => {

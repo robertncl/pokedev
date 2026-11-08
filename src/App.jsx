@@ -116,7 +116,7 @@ export default function App() {
   const [footerBefore, footerAfter] = t('footer.text').split('{source}');
 
   return (
-    <div className="container">
+    <>
       <Header
         search={search}
         onSearchChange={handleSearch}
@@ -125,51 +125,53 @@ export default function App() {
         onToggleFavorites={handleToggleFavorites}
         favoriteCount={favorites.size}
       />
-      <TypeFilter selected={selectedType} onSelect={handleSelectType} />
+      <div className="container">
+        <TypeFilter selected={selectedType} onSelect={handleSelectType} />
 
-      <main>
-        {visible.length === 0 ? (
-          <div className="empty">
-            <Pokeball size={56} />
-            <p>{t(showFavorites ? 'results.emptyFavorites' : 'results.empty')}</p>
-            <button type="button" className="button" onClick={handleClearFilters}>
-              {t('results.clear')}
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="results">
-              {t('results.count', { shown: formatNumber(slice.length), total: formatNumber(visible.length) })}
-            </p>
-            <div className="grid">
-              {slice.map((p, i) => (
-                <PokemonCard
-                  key={p.id}
-                  pokemon={p}
-                  index={i}
-                  isFavorite={favorites.has(p.id)}
-                  onToggleFavorite={toggleFavorite}
-                  onSelect={setSelectedId}
-                />
-              ))}
+        <main>
+          {visible.length === 0 ? (
+            <div className="empty">
+              <Pokeball size={56} />
+              <p>{t(showFavorites ? 'results.emptyFavorites' : 'results.empty')}</p>
+              <button type="button" className="button" onClick={handleClearFilters}>
+                {t('results.clear')}
+              </button>
             </div>
-            {hasMore && (
-              <div ref={sentinelRef} className="loading-more">
-                <Pokeball size={26} spinning />
-                {t('results.loadingMore')}
+          ) : (
+            <>
+              <p className="results">
+                {t('results.count', { shown: formatNumber(slice.length), total: formatNumber(visible.length) })}
+              </p>
+              <div className="grid">
+                {slice.map((p, i) => (
+                  <PokemonCard
+                    key={p.id}
+                    pokemon={p}
+                    index={i}
+                    isFavorite={favorites.has(p.id)}
+                    onToggleFavorite={toggleFavorite}
+                    onSelect={setSelectedId}
+                  />
+                ))}
               </div>
-            )}
-          </>
-        )}
-      </main>
+              {hasMore && (
+                <div ref={sentinelRef} className="loading-more">
+                  <Pokeball size={26} spinning />
+                  {t('results.loadingMore')}
+                </div>
+              )}
+            </>
+          )}
+        </main>
 
-      <footer className="footer">
-        {footerBefore}
-        <a href="https://pokeapi.co" target="_blank" rel="noreferrer">
-          PokéAPI
-        </a>
-        {footerAfter}
-      </footer>
+        <footer className="footer">
+          {footerBefore}
+          <a href="https://pokeapi.co" target="_blank" rel="noreferrer">
+            PokéAPI
+          </a>
+          {footerAfter}
+        </footer>
+      </div>
 
       {selectedId && (
         <DetailModal
@@ -180,6 +182,6 @@ export default function App() {
           onNavigate={setSelectedId}
         />
       )}
-    </div>
+    </>
   );
 }

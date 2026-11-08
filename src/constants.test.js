@@ -6,7 +6,6 @@ import {
   padId,
   shinyArtworkUrl,
   STAT_KEYS,
-  textColorOn,
   thumbUrl,
   TYPE_COLORS,
   TYPES,
@@ -59,15 +58,6 @@ describe('formatName', () => {
 
   it('preserves empty segments produced by consecutive hyphens', () => {
     expect(formatName('a--b')).toBe('A  B');
-  });
-});
-
-describe('textColorOn', () => {
-  it('uses black text on light type colors and white on dark ones', () => {
-    expect(textColorOn(TYPE_COLORS.electric)).toBe('#000');
-    expect(textColorOn(TYPE_COLORS.grass)).toBe('#000');
-    expect(textColorOn(TYPE_COLORS.water)).toBe('#fff');
-    expect(textColorOn(TYPE_COLORS.ghost)).toBe('#fff');
   });
 });
 

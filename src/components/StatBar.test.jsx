@@ -22,20 +22,24 @@ describe('StatBar', () => {
   });
 
   it.each([
-    [120, '67%', 'teal'],
-    [90, '50%', 'green'],
-    [60, '33%', 'yellow'],
-    [10, '6%', 'red'],
-  ])('renders value %i at %s with the %s color band', (value, width, band) => {
+    [120, '67%'],
+    [90, '50%'],
+    [10, '6%'],
+  ])('renders value %i at %s', (value, width) => {
     const { container } = render(<StatBar label="Atk" value={value} />);
     expect(fill(container).style.width).toBe(width);
-    expect(fill(container)).toHaveAttribute('data-band', band);
+    expect(fill(container)).not.toHaveAttribute('data-highlight');
   });
 
-  it('keeps an empty bar in place while the value is loading', () => {
-    const { container, getByText } = render(<StatBar label="HP" value={undefined} />);
+  it('marks the highlighted stat', () => {
+    const { container } = render(<StatBar label="Speed" value={90} highlight />);
+    expect(fill(container)).toHaveAttribute('data-highlight');
+  });
+
+  it('keeps an empty, unhighlighted bar in place while the value is loading', () => {
+    const { container, getByText } = render(<StatBar label="HP" value={undefined} highlight />);
     expect(getByText('HP')).toBeInTheDocument();
     expect(fill(container).style.width).toBe('0%');
-    expect(fill(container)).not.toHaveAttribute('data-band');
+    expect(fill(container)).not.toHaveAttribute('data-highlight');
   });
 });

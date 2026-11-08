@@ -30,8 +30,8 @@ npm test         # run the test suite
 - **No API calls at runtime.** The data is a snapshot of [PokéAPI](https://pokeapi.co) taken at build time. The grid index (id, name, types for all 1025, ~10 KB gzipped) is bundled, so search and type filtering are instant and local. Stats, abilities, Pokédex entries and evolution chains live in 17 small JSON shards per language (~7 KB gzipped each), fetched when a detail view opens and prefetched when you hover or focus a card. Another language costs one small chunk of strings plus, for languages with official Pokémon names, ~10 KB of names.
 - **Right-sized artwork.** Grid and evolution-chain images are self-hosted 256px AVIF thumbnails (~6 KB each, instead of the ~140 KB official PNGs). The detail view shows the cached thumbnail at once and swaps in the full-size artwork when it arrives.
 - **Prerendered.** `npm run build` renders the initial view (header, filters, first page of the grid) into `index.html` with the stylesheet inlined, so the page paints before any JavaScript loads; React then hydrates it.
-- **No UI framework.** Plain CSS (`src/index.css`) and inline SVG icons; the detail view is a native `<dialog>`. Fonts are self-hosted with metric-matched fallbacks so the font swap doesn't shift the layout.
-- **Cheap long lists.** Cards past the first page use `content-visibility: auto`, the 3D tilt effect only applies while a card is hovered, and cards are memoized so typing or favoriting doesn't re-render the grid.
+- **No UI framework.** Plain CSS (`src/index.css`) built on the ACME design system's tokens, and inline SVG icons; the detail view is a native `<dialog>`. Fonts are self-hosted with a metric-matched fallback so the font swap doesn't shift the layout.
+- **Cheap long lists.** Cards past the first page use `content-visibility: auto`, and cards are memoized so typing or favoriting doesn't re-render the grid.
 
 ## Languages
 
@@ -66,18 +66,18 @@ src/
   data.js            # index lookups + detail-shard loader with caching
   i18n/              # languages, UI strings, and the current-language store
   constants.js       # type colors, stat labels, display-name overrides, URLs
-  hooks.js           # favorites store, pointer tilt
+  hooks.js           # favorites store
   colorScheme.js     # light/dark override
   App.jsx            # filtering, pagination, detail-view orchestration
   components/        # header, cards, detail dialog, stats, evolution chain…
-  index.css          # design tokens + all styles
+  index.css          # ACME design tokens + all styles
   entry-server.jsx   # build-time prerender entry
 public/
   art/               # generated thumbnails
   data/details/      # generated detail shards
-  fonts/             # Nunito (OFL)
+  fonts/             # Inter, JetBrains Mono (OFL)
 ```
 
 ## Credits
 
-Data and sprites from [PokéAPI](https://pokeapi.co). Icons from [Tabler Icons](https://tabler.io/icons) (MIT). [Nunito](https://github.com/googlefonts/nunito) font under the SIL Open Font License (see `public/fonts/OFL.txt`). Pokémon and Pokémon character names are trademarks of Nintendo / Game Freak / Creatures Inc. This is a fan-made demo project.
+Data and sprites from [PokéAPI](https://pokeapi.co). Icons from [Tabler Icons](https://tabler.io/icons) (MIT). [Inter](https://github.com/rsms/inter) and [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) fonts under the SIL Open Font License (see `public/fonts/*-OFL.txt`). Pokémon and Pokémon character names are trademarks of Nintendo / Game Freak / Creatures Inc. This is a fan-made demo project.
