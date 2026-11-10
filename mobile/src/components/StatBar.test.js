@@ -1,4 +1,5 @@
 import { renderWithProviders } from '../test/render.js';
+import { COLORS } from '../theme.js';
 import StatBar from './StatBar.js';
 
 describe('StatBar', () => {
@@ -14,8 +15,16 @@ describe('StatBar', () => {
     [90, 50],
     [60, 33],
     [10, 6],
-  ])('renders value %i without throwing', async (value) => {
-    const { getByText } = await renderWithProviders(<StatBar label="Speed" value={value} />);
+  ])('renders value %i at %i%%', async (value, pct) => {
+    const { getByText, getByTestId } = await renderWithProviders(<StatBar label="Speed" value={value} />);
     expect(getByText(String(value))).toBeTruthy();
+    expect(getByTestId('stat-fill')).toHaveStyle({ width: `${pct}%` });
+  });
+
+  it('draws bars in the neutral data color and the highlighted one in blue', async () => {
+    const plain = await renderWithProviders(<StatBar label="HP" value={45} />);
+    expect(plain.getByTestId('stat-fill')).toHaveStyle({ backgroundColor: COLORS.light.data });
+    const best = await renderWithProviders(<StatBar label="Speed" value={90} highlight />);
+    expect(best.getByTestId('stat-fill')).toHaveStyle({ backgroundColor: COLORS.light.dataHighlight });
   });
 });

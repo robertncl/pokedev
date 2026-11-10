@@ -1,31 +1,29 @@
 import { View } from 'react-native';
-import { useTheme } from '../theme.js';
+import { RADIUS, SPACE, useTheme } from '../theme.js';
 
+// Same frame as PokemonCard, so the grid doesn't jump when details arrive.
 export default function SkeletonCard() {
   const { colors } = useTheme();
+  const bar = (width, height) => (
+    <View style={{ width, height, borderRadius: RADIUS.sm, backgroundColor: colors.surfaceHover }} />
+  );
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: colors.surface,
-        borderRadius: 18,
+        overflow: 'hidden',
+        backgroundColor: colors.surfaceRaised,
+        borderRadius: RADIUS.lg,
         borderWidth: 1,
         borderColor: colors.border,
-        padding: 14,
-        alignItems: 'center',
       }}
     >
-      <View
-        style={{
-          width: 116,
-          height: 116,
-          borderRadius: 58,
-          backgroundColor: colors.dish,
-          marginVertical: 8,
-        }}
-      />
-      <View style={{ width: '60%', height: 12, borderRadius: 999, backgroundColor: colors.border, marginTop: 8 }} />
-      <View style={{ width: '80%', height: 16, borderRadius: 999, backgroundColor: colors.border, marginTop: 8 }} />
+      <View style={{ aspectRatio: 4 / 3, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border }} />
+      <View style={{ padding: SPACE[3], gap: SPACE[3] }}>
+        {bar('65%', 14)}
+        {bar('35%', 10)}
+        {bar('50%', 20)}
+      </View>
     </View>
   );
 }

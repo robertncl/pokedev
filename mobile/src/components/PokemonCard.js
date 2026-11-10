@@ -1,83 +1,70 @@
 import { Image, Pressable, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { artworkUrl, formatName, padId } from '../constants.js';
-import { useTheme } from '../theme.js';
+import { font, FONTS, RADIUS, SPACE, TEXT, useTheme } from '../theme.js';
+import IconButton from './IconButton.js';
 import TypeBadge from './TypeBadge.js';
 
 export default function PokemonCard({ pokemon, isFavorite, onToggleFavorite, onPress }) {
   const { colors } = useTheme();
   const { id, name, types, sprites } = pokemon;
+  const label = formatName(name);
   const art = sprites?.other?.['official-artwork']?.front_default || artworkUrl(id);
 
+  // The favorite button is a sibling laid over the card, not a child of it:
+  // a control nested in an accessible button can't be reached by VoiceOver.
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`View details for ${formatName(name)}`}
-      style={({ pressed }) => ({
-        flex: 1,
-        backgroundColor: colors.surface,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: colors.border,
-        padding: 14,
-        transform: [{ scale: pressed ? 0.98 : 1 }],
-      })}
-    >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 4,
-        }}
+    <View style={{ flex: 1 }}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`View details for ${label}`}
+        style={({ pressed }) => ({
+          flex: 1,
+          overflow: 'hidden',
+          backgroundColor: colors.surfaceRaised,
+          borderRadius: RADIUS.lg,
+          borderWidth: 1,
+          borderColor: pressed ? colors.borderControl : colors.border,
+          boxShadow: pressed ? colors.shadowMd : colors.shadowSm,
+        })}
       >
-        <Text style={{ fontSize: 12, fontWeight: '800', color: colors.dimmed }}>{padId(id)}</Text>
-        <Pressable
-          hitSlop={10}
-          onPress={() => onToggleFavorite(id)}
-          accessibilityLabel={isFavorite ? `Remove ${formatName(name)} from favorites` : `Add ${formatName(name)} to favorites`}
+        <View
+          style={{
+            aspectRatio: 4 / 3,
+            backgroundColor: colors.surface,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <MaterialCommunityIcons
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={20}
-            color={isFavorite ? colors.accent : colors.dimmed}
-          />
-        </Pressable>
-      </View>
+          <Image source={{ uri: art }} style={{ width: '72%', height: '88%' }} resizeMode="contain" />
+        </View>
 
-      <View
-        style={{
-          alignSelf: 'center',
-          width: 116,
-          height: 116,
-          borderRadius: 58,
-          backgroundColor: colors.dish,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginVertical: 4,
-        }}
-      >
-        <Image source={{ uri: art }} style={{ width: 92, height: 92 }} resizeMode="contain" />
-      </View>
+        <View style={{ padding: SPACE[3], gap: SPACE[2] }}>
+          <Text style={{ ...font(600), fontSize: TEXT.md, letterSpacing: -0.18, color: colors.text }} numberOfLines={1}>
+            {label}
+          </Text>
+          <Text style={{ fontFamily: FONTS.mono, fontSize: TEXT.xs, color: colors.textSubtle }}>{padId(id)}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE[1] }}>
+            {types.map((t) => (
+              <TypeBadge key={t.type.name} type={t.type.name} />
+            ))}
+          </View>
+        </View>
+      </Pressable>
 
-      <Text
-        style={{
-          textAlign: 'center',
-          fontWeight: '800',
-          fontSize: 15,
-          color: colors.text,
-          marginTop: 6,
-          marginBottom: 8,
-        }}
-      >
-        {formatName(name)}
-      </Text>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 6 }}>
-        {types.map((t) => (
-          <TypeBadge key={t.type.name} type={t.type.name} />
-        ))}
+      <View style={{ position: 'absolute', top: SPACE[1], right: SPACE[1] }}>
+        <IconButton
+          icon={isFavorite ? 'heart' : 'heart-outline'}
+          label={isFavorite ? `Remove ${label} from favorites` : `Add ${label} to favorites`}
+          selected={isFavorite}
+          variant="ghost"
+          size={36}
+          iconSize={18}
+          onPress={() => onToggleFavorite(id)}
+        />
       </View>
-    </Pressable>
+    </View>
   );
 }

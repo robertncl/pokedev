@@ -1,35 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchEvolutionChain, fetchSpecies } from '../api.js';
 import { artworkUrl, formatName, padId, shinyArtworkUrl, STAT_LABELS } from '../constants.js';
-import { useTheme } from '../theme.js';
+import { font, FONTS, RADIUS, SPACE, TEXT, useTheme } from '../theme.js';
 import EvolutionChain from './EvolutionChain.js';
+import IconButton from './IconButton.js';
 import StatBar from './StatBar.js';
 import TypeBadge from './TypeBadge.js';
-
-function IconBtn({ name, color, active, onPress, label, colors }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={6}
-      accessibilityLabel={label}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: active ? (color || colors.accent) + '22' : colors.surfaceAlt,
-      }}
-    >
-      <MaterialCommunityIcons name={name} size={20} color={active ? color || colors.accent : colors.dimmed} />
-    </Pressable>
-  );
-}
 
 export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onClose, onNavigate }) {
   const { colors } = useTheme();
@@ -77,154 +55,198 @@ export default function DetailModal({ pokemon, isFavorite, onToggleFavorite, onC
     : '';
   const genus = species?.genera?.find((g) => g.language.name === 'en')?.genus;
   const total = pokemon.stats.reduce((sum, s) => sum + s.base_stat, 0);
+  const best = Math.max(...pokemon.stats.map((s) => s.base_stat));
+  const bestIndex = pokemon.stats.findIndex((s) => s.base_stat === best);
 
+  const muted = { ...font(400), fontSize: TEXT.sm, color: colors.textMuted };
   const sectionTitle = (t) => (
-    <Text
-      style={{
-        textTransform: 'uppercase',
-        fontWeight: '800',
-        color: colors.dimmed,
-        fontSize: 12,
-        letterSpacing: 1,
-        marginBottom: 10,
-        marginTop: 4,
-      }}
-    >
+    <Text style={{ ...font(600), fontSize: TEXT.md, letterSpacing: -0.18, color: colors.text, marginBottom: SPACE[3] }}>
       {t}
     </Text>
   );
 
+  const facts = [
+    ['Height', `${(pokemon.height / 10).toFixed(1)} m`],
+    ['Weight', `${(pokemon.weight / 10).toFixed(1)} kg`],
+    ['Base XP', String(pokemon.base_experience ?? '—')],
+  ];
+
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent>
-      <View style={{ flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'flex-end' }}>
         {/* tap outside to dismiss */}
         <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Close details" />
         <View
           style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
+            backgroundColor: colors.surfaceRaised,
+            borderTopLeftRadius: RADIUS.xl,
+            borderTopRightRadius: RADIUS.xl,
+            borderWidth: 1,
+            borderBottomWidth: 0,
+            borderColor: colors.border,
+            boxShadow: colors.shadowLg,
             maxHeight: '92%',
           }}
         >
           <View
             style={{
               alignSelf: 'center',
-              width: 40,
-              height: 5,
-              borderRadius: 3,
-              backgroundColor: colors.border,
-              marginVertical: 10,
+              width: 36,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: colors.borderControl,
+              marginVertical: SPACE[2],
             }}
           />
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 32 + insets.bottom }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: 14,
-              }}
-            >
-              <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={{ color: colors.dimmed, fontWeight: '800', fontSize: 13 }}>{padId(pokemon.id)}</Text>
-                <Text style={{ color: colors.text, fontWeight: '800', fontSize: 26 }}>{formatName(pokemon.name)}</Text>
-                {genus ? <Text style={{ color: colors.dimmed, fontWeight: '600' }}>{genus}</Text> : null}
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: SPACE[5], paddingBottom: SPACE[8] + insets.bottom, gap: SPACE[6] }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: SPACE[3] }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontFamily: FONTS.mono, fontSize: TEXT.sm, color: colors.textSubtle }}>{padId(pokemon.id)}</Text>
+                <Text style={{ ...font(600), fontSize: TEXT['2xl'], letterSpacing: -0.48, color: colors.text }}>
+                  {formatName(pokemon.name)}
+                </Text>
+                {genus ? <Text style={muted}>{genus}</Text> : null}
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <IconBtn name="star-four-points" color="#f6b93b" active={shiny} onPress={() => setShiny((s) => !s)} label="Toggle shiny artwork" colors={colors} />
-                <IconBtn name={isFavorite ? 'heart' : 'heart-outline'} color={colors.accent} active={isFavorite} onPress={() => onToggleFavorite(pokemon.id)} label="Toggle favorite" colors={colors} />
-                <IconBtn name="close" onPress={onClose} label="Close details" colors={colors} />
+              <View style={{ flexDirection: 'row', gap: SPACE[2] }}>
+                <IconButton icon="star-four-points" label="Toggle shiny artwork" selected={shiny} onPress={() => setShiny((s) => !s)} />
+                <IconButton
+                  icon={isFavorite ? 'heart' : 'heart-outline'}
+                  label="Toggle favorite"
+                  selected={isFavorite}
+                  onPress={() => onToggleFavorite(pokemon.id)}
+                />
+                <IconButton icon="close" label="Close details" onPress={onClose} />
               </View>
             </View>
 
-            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ alignItems: 'center', gap: SPACE[4] }}>
               <View
                 style={{
-                  width: 220,
-                  height: 220,
-                  borderRadius: 110,
-                  backgroundColor: colors.dish,
+                  width: '100%',
+                  maxWidth: 320,
+                  aspectRatio: 1,
+                  borderRadius: RADIUS.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Image source={{ uri: art }} style={{ width: 170, height: 170 }} resizeMode="contain" />
+                <Image source={{ uri: art }} style={{ width: '78%', height: '78%' }} resizeMode="contain" />
               </View>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+              <View style={{ flexDirection: 'row', gap: SPACE[2] }}>
                 {pokemon.types.map((t) => (
                   <TypeBadge key={t.type.name} type={t.type.name} size="md" />
                 ))}
               </View>
-              <Text style={{ color: colors.dimmed, textAlign: 'center', marginTop: 12, lineHeight: 21, fontSize: 14 }}>
+              <Text style={{ ...muted, textAlign: 'center', lineHeight: 21 }}>
                 {species ? flavor || 'No Pokédex entry available.' : 'Loading Pokédex entry…'}
               </Text>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 18 }}>
-              {[
-                ['Height', `${(pokemon.height / 10).toFixed(1)} m`],
-                ['Weight', `${(pokemon.weight / 10).toFixed(1)} kg`],
-                ['Base XP', String(pokemon.base_experience ?? '—')],
-              ].map(([label, value]) => (
+            <View
+              style={{
+                flexDirection: 'row',
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: RADIUS.lg,
+                backgroundColor: colors.surface,
+              }}
+            >
+              {facts.map(([label, value], i) => (
                 <View
                   key={label}
                   style={{
                     flex: 1,
-                    backgroundColor: colors.surface,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    padding: 12,
-                    alignItems: 'center',
+                    paddingVertical: SPACE[3],
+                    paddingHorizontal: SPACE[4],
+                    borderLeftWidth: i ? 1 : 0,
+                    borderLeftColor: colors.border,
                   }}
                 >
-                  <Text style={{ fontSize: 11, textTransform: 'uppercase', fontWeight: '800', color: colors.dimmed, letterSpacing: 0.5 }}>
-                    {label}
-                  </Text>
-                  <Text style={{ fontWeight: '800', fontSize: 16, color: colors.text, marginTop: 2 }}>{value}</Text>
-                </View>
-              ))}
-            </View>
-
-            {sectionTitle('Abilities')}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-              {pokemon.abilities.map((a) => (
-                <View
-                  key={`${a.ability.name}-${a.slot}`}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 10,
-                    paddingVertical: 8,
-                    paddingHorizontal: 14,
-                  }}
-                >
-                  <Text style={{ color: colors.text, fontWeight: '700', fontSize: 13 }}>
-                    {formatName(a.ability.name)}
-                    {a.is_hidden ? <Text style={{ color: colors.dimmed, fontSize: 11 }}>{'  ·  hidden'}</Text> : null}
+                  <Text style={{ ...font(500), fontSize: TEXT.xs, color: colors.textMuted }}>{label}</Text>
+                  <Text
+                    style={{ ...font(600), fontSize: TEXT.lg, color: colors.text, fontVariant: ['tabular-nums'] }}
+                    numberOfLines={1}
+                  >
+                    {value}
                   </Text>
                 </View>
               ))}
             </View>
 
-            {sectionTitle('Base Stats')}
-            <View style={{ gap: 10 }}>
-              {pokemon.stats.map((s) => (
-                <StatBar key={s.stat.name} label={STAT_LABELS[s.stat.name] || formatName(s.stat.name)} value={s.base_stat} />
-              ))}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                <Text style={{ width: 60, fontSize: 13, fontWeight: '800', color: colors.text }}>Total</Text>
-                <Text style={{ width: 30, textAlign: 'right', fontSize: 13, fontWeight: '800', color: colors.accent }}>{total}</Text>
-                <View style={{ flex: 1 }} />
+            <View>
+              {sectionTitle('Abilities')}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE[2] }}>
+                {pokemon.abilities.map((a) => (
+                  <View
+                    key={`${a.ability.name}-${a.slot}`}
+                    style={{
+                      justifyContent: 'center',
+                      height: 28,
+                      paddingHorizontal: SPACE[3],
+                      borderRadius: RADIUS.sm,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      backgroundColor: colors.surfaceHover,
+                    }}
+                  >
+                    <Text style={{ ...font(500), fontSize: TEXT.sm, color: colors.text }}>
+                      {formatName(a.ability.name)}
+                      {a.is_hidden ? (
+                        <Text style={{ ...font(400), fontSize: TEXT.xs, color: colors.textMuted }}>{' · hidden'}</Text>
+                      ) : null}
+                    </Text>
+                  </View>
+                ))}
               </View>
             </View>
 
-            <View style={{ marginTop: 22 }}>
-              {sectionTitle('Evolution Chain')}
-              {chain === undefined && <Text style={{ color: colors.dimmed }}>Loading evolution chain…</Text>}
-              {chain === null && <Text style={{ color: colors.dimmed }}>No evolution data available.</Text>}
+            <View>
+              {sectionTitle('Base stats')}
+              <View style={{ gap: SPACE[3] }}>
+                {pokemon.stats.map((s, i) => (
+                  <StatBar
+                    key={s.stat.name}
+                    label={STAT_LABELS[s.stat.name] || formatName(s.stat.name)}
+                    value={s.base_stat}
+                    highlight={i === bestIndex}
+                  />
+                ))}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingTop: SPACE[3],
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  }}
+                >
+                  <Text style={{ ...font(600), width: 60, fontSize: TEXT.sm, color: colors.text }}>Total</Text>
+                  <Text
+                    style={{
+                      ...font(600),
+                      width: 32,
+                      textAlign: 'right',
+                      fontSize: TEXT.sm,
+                      color: colors.text,
+                      fontVariant: ['tabular-nums'],
+                    }}
+                  >
+                    {total}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View>
+              {sectionTitle('Evolution chain')}
+              {chain === undefined && <Text style={muted}>Loading evolution chain…</Text>}
+              {chain === null && <Text style={muted}>No evolution data available.</Text>}
               {chain && <EvolutionChain chain={chain} currentId={pokemon.id} onNavigate={onNavigate} />}
             </View>
           </ScrollView>
