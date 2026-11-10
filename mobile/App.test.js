@@ -76,10 +76,10 @@ describe('App', () => {
     const { getByText, findByText } = await render(<App />);
 
     await waitFor(() =>
-      expect(getByText("Couldn't reach PokéAPI. Check your connection.")).toBeTruthy()
+      expect(getByText("Couldn't reach PokéAPI. Check your connection and try again.")).toBeTruthy()
     );
 
-    await fireEvent.press(getByText('Try Again'));
+    await fireEvent.press(getByText('Try again'));
     await findByText('Bulbasaur');
   });
 
@@ -169,7 +169,7 @@ describe('App', () => {
     await fireEvent.press(getByLabelText('Toggle favorites filter'));
     await findByText('No Pokémon found in your favorites.');
 
-    await fireEvent.press(getByText('Clear Filters'));
+    await fireEvent.press(getByText('Clear filters'));
     await findByText('Bulbasaur');
   });
 

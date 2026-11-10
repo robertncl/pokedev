@@ -21,13 +21,19 @@ mobile/
   src/
     api.js               # PokéAPI client (shared with web, framework-agnostic)
     constants.js         # type colors, name overrides, formatters (shared with web)
-    theme.js             # light/dark color tokens + ThemeProvider
+    theme.js             # ACME design system tokens (colour, spacing, radius, type) + ThemeProvider
     useFavorites.js      # AsyncStorage-backed favorites
     components/          # PokemonCard, TypeFilter, DetailModal, EvolutionChain, …
 ```
 
 `api.js` and `constants.js` are byte-for-byte the same logic as the web app — only the
 UI layer differs (React Native components instead of Mantine/DOM).
+
+Both apps are styled with the ACME design system (v5: Graphite + ink + Blue): the same
+colour, spacing and radius tokens, Inter for text and JetBrains Mono for numbers (bundled
+from `@expo-google-fonts`), neutral type badges with a type-colour dot, and the best base
+stat highlighted in blue. The system is light-only; dark mode maps the same ramps onto a
+dark ground.
 
 ## Run in development
 

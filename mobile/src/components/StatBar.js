@@ -1,38 +1,34 @@
 import { Text, View } from 'react-native';
-import { useTheme } from '../theme.js';
+import { font, TEXT, useTheme } from '../theme.js';
 
-function statColor(value) {
-  if (value >= 115) return '#37b6a8';
-  if (value >= 85) return '#5cb85c';
-  if (value >= 55) return '#f0ad4e';
-  return '#ef6b5e';
-}
-
-export default function StatBar({ label, value }) {
+// Every bar is neutral; `highlight` marks the one takeaway (the best stat).
+export default function StatBar({ label, value, highlight = false }) {
   const { colors } = useTheme();
   // 180 ≈ a very high base stat; anything beyond just fills the bar
   const pct = Math.min(100, Math.round((value / 180) * 100));
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Text style={{ width: 60, fontSize: 13, fontWeight: '700', color: colors.dimmed }}>{label}</Text>
-      <Text style={{ width: 30, textAlign: 'right', fontSize: 13, fontWeight: '800', color: colors.text }}>
-        {value}
-      </Text>
-      <View
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Text style={{ ...font(400), width: 60, fontSize: TEXT.sm, color: colors.textMuted }}>{label}</Text>
+      <Text
         style={{
-          flex: 1,
-          height: 12,
-          borderRadius: 999,
-          backgroundColor: colors.border,
-          overflow: 'hidden',
+          ...font(600),
+          width: 32,
+          textAlign: 'right',
+          fontSize: TEXT.sm,
+          color: colors.text,
+          fontVariant: ['tabular-nums'],
         }}
       >
+        {value}
+      </Text>
+      <View style={{ flex: 1, height: 8, borderRadius: 2, backgroundColor: colors.surfaceHover, overflow: 'hidden' }}>
         <View
+          testID="stat-fill"
           style={{
             width: `${pct}%`,
             height: '100%',
-            borderRadius: 999,
-            backgroundColor: statColor(value),
+            borderRadius: 2,
+            backgroundColor: highlight ? colors.dataHighlight : colors.data,
           }}
         />
       </View>

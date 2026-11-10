@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function Pokeball({ size = 32, color = '#ee5253', spinning = false }) {
+export default function Pokeball({ size = 32, color = '#c91c15', spinning = false }) {
   const spin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

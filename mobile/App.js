@@ -1,4 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular';
+import { JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono/600SemiBold';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +14,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchIndex, fetchPokemon, fetchTypeMembers } from './src/api.js';
 import { PAGE_SIZE } from './src/constants.js';
 import { useFavorites } from './src/useFavorites.js';
-import { ThemeProvider, useTheme } from './src/theme.js';
+import { font, RADIUS, SPACE, TEXT, ThemeProvider, useTheme } from './src/theme.js';
+import IconButton from './src/components/IconButton.js';
 import Pokeball from './src/components/Pokeball.js';
 import PokemonCard from './src/components/PokemonCard.js';
 import SkeletonCard from './src/components/SkeletonCard.js';
@@ -14,6 +23,51 @@ import TypeFilter from './src/components/TypeFilter.js';
 import DetailModal from './src/components/DetailModal.js';
 
 const normalize = (v) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Keep the splash up until the fonts are ready, so text never re-flows.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+const FONT_FILES = {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  JetBrainsMono_400Regular,
+  JetBrainsMono_600SemiBold,
+};
+
+// Buttons: ink primary (one per view) and bordered secondary. A press is a
+// color step, never a scale.
+function Button({ label, onPress, variant = 'secondary' }) {
+  const { colors } = useTheme();
+  const primary = variant === 'primary';
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        height: 44,
+        justifyContent: 'center',
+        paddingHorizontal: SPACE[5],
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: primary ? colors.primary : colors.borderControl,
+        backgroundColor: primary
+          ? pressed
+            ? colors.primaryActive
+            : colors.primary
+          : pressed
+            ? colors.surfaceHover
+            : colors.surfaceRaised,
+        boxShadow: colors.shadowSm,
+      })}
+    >
+      <Text style={{ ...font(500), fontSize: TEXT.sm, letterSpacing: -0.15, color: primary ? colors.onPrimary : colors.text }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 function Dex() {
   const { colors, scheme, toggle } = useTheme();
@@ -126,109 +180,108 @@ function Dex() {
     }
   }, []);
 
-  const iconBtn = (active) => ({
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: active ? colors.accent + '22' : colors.surface,
-  });
+  const statusText = { ...font(400), fontSize: TEXT.sm, color: colors.textMuted, textAlign: 'center' };
 
   if (bootError) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 18 }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center', padding: SPACE[6], gap: SPACE[5] }}>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-        <Pokeball size={56} color={colors.accent} />
-        <Text style={{ color: colors.dimmed, fontWeight: '700', textAlign: 'center' }}>
-          Couldn't reach PokéAPI. Check your connection.
-        </Text>
-        <Pressable
-          onPress={() => setRetryTick((t) => t + 1)}
-          style={{ backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 28 }}
-        >
-          <Text style={{ color: colors.onAccent, fontWeight: '800' }}>Try Again</Text>
-        </Pressable>
+        <Pokeball size={48} color={colors.mark} />
+        <Text style={statusText}>Couldn't reach PokéAPI. Check your connection and try again.</Text>
+        <Button label="Try again" variant="primary" onPress={() => setRetryTick((t) => t + 1)} />
       </View>
     );
   }
 
   if (!index) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center', gap: SPACE[4] }}>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-        <Pokeball size={56} color={colors.accent} spinning />
-        <Text style={{ color: colors.dimmed, fontWeight: '700' }}>Loading Pokédex…</Text>
+        <Pokeball size={40} color={colors.mark} spinning />
+        <Text style={statusText}>Loading Pokédex…</Text>
       </View>
     );
   }
 
   const membersLoading = visible === null;
 
-  const header = (
-    <View>
-      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Pokeball size={34} color={colors.accent} />
-            <View>
-              <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text }}>
-                Poké<Text style={{ color: colors.accent }}>Dev</Text>
-              </Text>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.dimmed, letterSpacing: 1.2, textTransform: 'uppercase' }}>
-                Pokédex
-              </Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable onPress={onToggleFavorites} style={iconBtn(showFavorites)} accessibilityLabel="Toggle favorites filter">
-              <MaterialCommunityIcons name={showFavorites ? 'heart' : 'heart-outline'} size={20} color={showFavorites ? colors.accent : colors.dimmed} />
-            </Pressable>
-            <Pressable onPress={toggle} style={iconBtn(false)} accessibilityLabel="Toggle light/dark theme">
-              <MaterialCommunityIcons name={scheme === 'dark' ? 'weather-sunny' : 'weather-night'} size={20} color={colors.dimmed} />
-            </Pressable>
-          </View>
-        </View>
+  // Full-width app bar at zero elevation, separated only by its hairline.
+  const appBar = (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 56,
+        paddingHorizontal: SPACE[4],
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        backgroundColor: colors.canvas,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE[2] }}>
+        <Pokeball size={24} color={colors.mark} />
+        <Text accessibilityRole="header" style={{ ...font(700), fontSize: TEXT.lg, letterSpacing: -0.2, color: colors.text }}>
+          PokéDev
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: SPACE[2] }}>
+        <IconButton
+          icon={showFavorites ? 'heart' : 'heart-outline'}
+          label="Toggle favorites filter"
+          selected={showFavorites}
+          onPress={onToggleFavorites}
+        />
+        <IconButton
+          icon={scheme === 'dark' ? 'weather-sunny' : 'weather-night'}
+          label="Toggle light/dark theme"
+          onPress={toggle}
+        />
+      </View>
+    </View>
+  );
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: 999,
-            paddingHorizontal: 14,
-            height: 46,
-            marginBottom: 14,
-          }}
-        >
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.dimmed} />
-          <TextInput
-            value={search}
-            onChangeText={onSearch}
-            placeholder="Search name or number…"
-            placeholderTextColor={colors.dimmed}
-            style={{ flex: 1, color: colors.text, fontSize: 15 }}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-          />
-          {search ? (
-            <Pressable onPress={() => onSearch('')} hitSlop={8} accessibilityLabel="Clear search">
-              <MaterialCommunityIcons name="close" size={18} color={colors.dimmed} />
-            </Pressable>
-          ) : null}
-        </View>
+  const header = (
+    <View style={{ paddingTop: SPACE[4], gap: SPACE[4] }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: SPACE[2],
+          marginHorizontal: SPACE[4],
+          height: 44,
+          paddingHorizontal: SPACE[3],
+          borderWidth: 1,
+          borderColor: colors.borderStrong,
+          borderRadius: RADIUS.md,
+          backgroundColor: colors.surfaceRaised,
+          boxShadow: colors.shadowSm,
+        }}
+      >
+        <MaterialCommunityIcons name="magnify" size={20} color={colors.textSubtle} />
+        <TextInput
+          value={search}
+          onChangeText={onSearch}
+          placeholder="Search name or number…"
+          placeholderTextColor={colors.textSubtle}
+          accessibilityLabel="Search Pokémon by name or number"
+          selectionColor={colors.selected}
+          style={{ ...font(400), flex: 1, color: colors.text, fontSize: TEXT.md }}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+        {search ? (
+          <Pressable onPress={() => onSearch('')} hitSlop={12} accessibilityLabel="Clear search">
+            <MaterialCommunityIcons name="close" size={18} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
       </View>
 
       <TypeFilter selected={selectedType} onSelect={onSelectType} />
 
       {!membersLoading && (
-        <Text style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4, color: colors.dimmed, fontWeight: '700', fontSize: 13 }}>
+        <Text style={{ ...font(400), paddingHorizontal: SPACE[4], color: colors.textMuted, fontSize: TEXT.sm, fontVariant: ['tabular-nums'] }}>
           Showing {slice.length} of {visible.length} Pokémon
         </Text>
       )}
@@ -240,14 +293,15 @@ function Dex() {
     : slice;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      {appBar}
       <FlatList
         data={data}
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
-        columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
-        contentContainerStyle={{ gap: 12, paddingBottom: insets.bottom + 28 }}
+        columnWrapperStyle={{ gap: SPACE[3], paddingHorizontal: SPACE[4] }}
+        contentContainerStyle={{ gap: SPACE[3], paddingBottom: insets.bottom + SPACE[8] }}
         ListHeaderComponent={header}
         keyboardShouldPersistTaps="handled"
         onEndReachedThreshold={0.6}
@@ -270,25 +324,32 @@ function Dex() {
         }}
         ListEmptyComponent={
           !membersLoading ? (
-            <View style={{ alignItems: 'center', padding: 48, gap: 16 }}>
-              <Pokeball size={48} color={colors.dimmed} />
-              <Text style={{ color: colors.dimmed, fontWeight: '700' }}>
+            <View
+              style={{
+                alignItems: 'center',
+                marginHorizontal: SPACE[4],
+                paddingVertical: SPACE[12],
+                paddingHorizontal: SPACE[6],
+                gap: SPACE[4],
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: RADIUS.lg,
+                backgroundColor: colors.surface,
+              }}
+            >
+              <Pokeball size={40} color={colors.textSubtle} />
+              <Text style={{ ...font(400), fontSize: TEXT.md, color: colors.text, textAlign: 'center' }}>
                 No Pokémon found{showFavorites ? ' in your favorites' : ''}.
               </Text>
-              <Pressable
-                onPress={clearFilters}
-                style={{ borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 24 }}
-              >
-                <Text style={{ color: colors.text, fontWeight: '800' }}>Clear Filters</Text>
-              </Pressable>
+              <Button label="Clear filters" onPress={clearFilters} />
             </View>
           ) : null
         }
         ListFooterComponent={
           hasMore && !membersLoading ? (
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingVertical: 22 }}>
-              <Pokeball size={22} color={colors.accent} spinning />
-              <Text style={{ color: colors.dimmed, fontWeight: '700' }}>Loading more…</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACE[3], paddingVertical: SPACE[6] }}>
+              <Pokeball size={20} color={colors.mark} spinning />
+              <Text style={statusText}>Loading more…</Text>
             </View>
           ) : null
         }
@@ -308,6 +369,14 @@ function Dex() {
 }
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts(FONT_FILES);
+  const ready = fontsLoaded || !!fontError;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
   return (
     <SafeAreaProvider>
       <ThemeProvider>
